@@ -114,7 +114,7 @@ export default function LoginForm() {
                 <div className="space-y-2">
                     <div className="flex justify-between items-center ml-1">
                         <label className="text-sm font-medium text-zinc-300">Senha</label>
-                        <Link href="#" className="text-sm font-medium text-blue-500 hover:text-blue-400 transition-colors">
+                        <Link href="/auth/reset" className="text-sm font-medium text-blue-500 hover:text-blue-400 transition-colors">
                             Esqueceu a senha?
                         </Link>
                     </div>

@@ -21,7 +21,7 @@ export default function SignUpPage() {
                 <RegisterForm />
 
                 <p className="mt-10 text-center text-zinc-500 text-sm">
-                    Já tem uma conta?
+                    Já tem uma conta?{" "}
                     <Link href="/auth/signin" className="text-white font-semibold hover:underline decoration-emerald-500 underline-offset-4">
                         Fazer login
                     </Link>

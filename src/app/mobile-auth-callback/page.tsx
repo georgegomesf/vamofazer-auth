@@ -77,8 +77,13 @@ export default async function MobileAuthCallbackPage() {
                 <p style={styles.sub}>Volte ao aplicativo. Esta janela pode ser fechada.</p>
             </div>
         );
-    } catch (error) {
-        console.error("MobileAuthCallback error:", error);
+    } catch (error: any) {
+        console.error("MobileAuthCallback error details:", {
+            message: error.message,
+            code: error.code,
+            meta: error.meta,
+            stack: error.stack
+        });
         return (
             <div style={styles.container}>
                 <h2 style={styles.error}>Erro ao salvar sessão.</h2>

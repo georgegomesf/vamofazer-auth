@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
-import { generatePasswordResetToken } from "@/lib/tokens";
-import { sendPasswordResetEmail, sendGoogleAuthWarningEmail } from "@/lib/mail";
+import { generatePasswordResetCode } from "@/lib/tokens";
+import { sendPasswordResetCodeEmail, sendGoogleAuthWarningEmail } from "@/lib/mail";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
 
         if (!existingUser) {
             // Por segurança, não informamos se o e-mail existe
-            return NextResponse.json({ success: "Se este e-mail estiver cadastrado, um link de recuperação foi enviado." });
+            return NextResponse.json({ success: "Se este e-mail estiver cadastrado, um código de recuperação foi enviado." });
         }
 
         if (!existingUser.password) {
@@ -27,13 +27,13 @@ export async function POST(request: Request) {
             return NextResponse.json({ success: "Instruções enviadas para o seu e-mail!" });
         }
 
-        const passwordResetToken = await generatePasswordResetToken(email);
-        await sendPasswordResetEmail(
+        const passwordResetToken = await generatePasswordResetCode(email);
+        await sendPasswordResetCodeEmail(
             passwordResetToken.email,
             passwordResetToken.token
         );
 
-        return NextResponse.json({ success: "Link de recuperação enviado!" });
+        return NextResponse.json({ success: "Código de recuperação enviado!" });
     } catch (error) {
         console.error("Reset mobile error:", error);
         return NextResponse.json({ error: "Erro interno no servidor" }, { status: 500 });

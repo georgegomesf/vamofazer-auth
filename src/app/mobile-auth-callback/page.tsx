@@ -64,8 +64,8 @@ export default async function MobileAuthCallbackPage() {
             },
         });
 
-        // Remove o cookie após usar
-        cookieStore.delete('mobile_session_id');
+        // Remove o cookie após usar (Comentado pois Pages não podem deletar cookies)
+        // cookieStore.delete('mobile_session_id');
 
         return (
             <div style={styles.container}>

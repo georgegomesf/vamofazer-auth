@@ -64,11 +64,17 @@ export default async function MobileAuthCallbackPage() {
             },
         });
 
+        // Lê o redirectUri do cookie
+        const redirectUrl = cookieStore.get('mobile_redirect_uri')?.value || 'mob://auth';
+
         // Remove o cookie após usar (Comentado pois Pages não podem deletar cookies)
         // cookieStore.delete('mobile_session_id');
 
         return (
             <div style={styles.container}>
+                {/* Fallback de redirecionamento imediato via Meta Tag */}
+                <meta httpEquiv="refresh" content={`1;url=${redirectUrl}`} />
+
                 <svg style={styles.icon} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="12" cy="12" r="12" fill="#22c55e" />
                     <path d="M7 12.5l3.5 3.5 6.5-7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -87,12 +93,13 @@ export default async function MobileAuthCallbackPage() {
                     dangerouslySetInnerHTML={{
                         __html: `
                             const btn = document.getElementById('close-button');
+                            const redirectUrl = "${redirectUrl}";
                             
                             function forceClose() {
                                 window.close();
                                 window.open('', '_self', '');
                                 window.close();
-                                window.location.href = 'mob://auth';
+                                window.location.href = redirectUrl;
                             }
 
                             // Handler para o botão

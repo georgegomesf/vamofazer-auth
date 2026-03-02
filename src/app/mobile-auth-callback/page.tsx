@@ -74,21 +74,38 @@ export default async function MobileAuthCallbackPage() {
                     <path d="M7 12.5l3.5 3.5 6.5-7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 <h2 style={styles.title}>Autenticação concluída!</h2>
-                <p style={styles.sub}>Retornando para o aplicativo...</p>
+                <p style={styles.sub}>Você já pode retornar ao aplicativo.</p>
+
+                <button
+                    onClick={() => {
+                        // @ts-ignore
+                        window.close();
+                        window.location.href = 'mob://auth';
+                    }}
+                    style={styles.button}
+                >
+                    Voltar para o App
+                </button>
+
                 <script
                     dangerouslySetInnerHTML={{
                         __html: `
-                            // Tenta fechar a janela e redirecionar para o app
-                            const closeAndRedirect = () => {
+                            function forceClose() {
+                                // Tenta o fechamento padrão
                                 window.close();
-                                window.location.href = 'mob://auth';
-                            };
+                                
+                                // Truque para Chrome/Android: tenta abrir a si mesmo para ganhar permissão de fechar
+                                window.open('', '_self', '');
+                                window.close();
 
-                            // Executa imediatamente e tenta novamente em intervalos curtos
-                            closeAndRedirect();
-                            setTimeout(closeAndRedirect, 500);
-                            setTimeout(closeAndRedirect, 1000);
-                            setTimeout(closeAndRedirect, 2000);
+                                // Redireciona para o Deep Link (no iOS/Android isso costuma fechar o in-app browser)
+                                window.location.href = 'mob://auth';
+                            }
+
+                            // Executa imediatamente e em intervalos
+                            forceClose();
+                            setTimeout(forceClose, 1000);
+                            setTimeout(forceClose, 3000);
                         `
                     }}
                 />

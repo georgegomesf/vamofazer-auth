@@ -8,7 +8,17 @@ export default auth((req) => {
 
     if (isAuthRoute) {
         if (isLoggedIn) {
-            return Response.redirect(new URL("/", nextUrl));
+            const callbackUrl = nextUrl.searchParams.get("callbackUrl");
+            console.log(`AUTH PROXY: User already logged in on auth route. redirecting to ${callbackUrl || "/"}`);
+            if (callbackUrl) {
+                try {
+                    const url = new URL(callbackUrl);
+                    return Response.redirect(url.toString());
+                } catch (e) {
+                    console.error("AUTH PROXY: Invalid callbackUrl:", callbackUrl);
+                }
+            }
+            return Response.redirect(new URL("/", nextUrl).toString());
         }
         return;
     }

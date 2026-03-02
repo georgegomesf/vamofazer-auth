@@ -41,7 +41,13 @@ export default function LoginForm() {
                 setError("E-mail ou senha inválidos");
                 setLoading(false);
             } else {
-                router.push(callbackUrl);
+                // Se o callbackUrl for uma URL absoluta (ex: http://localhost:3003), 
+                // o router.push não funcionará. Usamos window.location.href.
+                if (callbackUrl.startsWith("http")) {
+                    window.location.href = callbackUrl;
+                } else {
+                    router.push(callbackUrl);
+                }
             }
         } catch (err) {
             setError("Algo deu errado. Tente novamente.");

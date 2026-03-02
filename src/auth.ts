@@ -144,6 +144,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             }
             return token;
         },
+        async redirect({ url, baseUrl }) {
+            // Permite redirecionamentos para o projeto bck e domínios da VamoFazer
+            if (url.startsWith(baseUrl)) return url;
+            if (url.startsWith("http://localhost:3003")) return url;
+            if (url.includes("vamofazer.com.br")) return url;
+            return baseUrl;
+        },
     },
     events: {
         async createUser({ user }) {
@@ -163,7 +170,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     session: {
         strategy: "jwt",
     },
+    cookies: {
+        sessionToken: {
+            name: `authjs.session-token`,
+            options: {
+                httpOnly: true,
+                sameSite: "lax",
+                path: "/",
+                secure: process.env.NODE_ENV === "production",
+            },
+        },
+    },
     pages: {
         signIn: "/auth/signin",
     },
 });
+

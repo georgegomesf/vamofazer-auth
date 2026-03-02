@@ -127,3 +127,47 @@ export const sendGoogleAuthWarningEmail = async (email: string) => {
 
     return { success: res.ok };
 };
+
+export const sendVerificationCodeEmail = async (email: string, code: string) => {
+    const res = await fetch(process.env.BREVO_API_URL || 'https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+            'api-key': process.env.BREVO_API_KEY as string,
+            'content-type': 'application/json',
+            'accept': 'application/json',
+        },
+        body: JSON.stringify({
+            sender: {
+                name: "VamoFazer",
+                email: process.env.EMAIL_FROM
+            },
+            to: [{ email }],
+            subject: "Código de Verificação - VamoFazer",
+            htmlContent: `
+                <div style="background: #050505; color: white; padding: 40px; font-family: sans-serif; border-radius: 24px; border: 1px solid #27272a; max-width: 600px; margin: auto;">
+                    <div style="margin-bottom: 30px; text-align: center;">
+                        <h1 style="color: #3b82f6; margin: 0; font-size: 24px;">VamoFazer</h1>
+                    </div>
+                    <h2 style="color: white; text-align: center;">Verificação de Conta</h2>
+                    <p style="color: #a1a1aa; font-size: 16px; line-height: 1.5; text-align: center;">
+                        Parabéns por se cadastrar no VamoFazer! Use o código abaixo para confirmar seu e-mail e ativar sua conta.
+                    </p>
+                    <div style="text-align: center; margin: 40px 0;">
+                        <div style="background: #18181b; color: #3b82f6; padding: 24px; border-radius: 16px; font-weight: bold; font-size: 32px; display: inline-block; letter-spacing: 8px; border: 1px solid #27272a;">
+                            ${code}
+                        </div>
+                    </div>
+                    <p style="font-size: 12px; color: #52525b; text-align: center; margin-top: 40px;">
+                        Este código expira em 15 minutos. Se você não solicitou este cadastro, pode ignorar este e-mail.
+                    </p>
+                </div>
+            `
+        })
+    });
+
+    if (!res.ok) {
+        return { error: "Erro ao enviar e-mail" };
+    }
+
+    return { success: true };
+};

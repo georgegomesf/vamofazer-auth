@@ -2,6 +2,8 @@ import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { UserRole } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { generateVerificationCode } from "@/lib/tokens";
+import { sendVerificationCodeEmail } from "@/lib/mail";
 
 export async function POST(request: Request) {
     try {
@@ -28,11 +30,16 @@ export async function POST(request: Request) {
                 email,
                 password: hashedPassword,
                 role: UserRole.VISITOR,
+                emailVerified: null, // Garante que comece nulo
             },
         });
 
+        // Gera e envia o código de verificação
+        const verificationToken = await generateVerificationCode(email);
+        await sendVerificationCodeEmail(verificationToken.identifier, verificationToken.token);
+
         return NextResponse.json({
-            success: "Conta criada com sucesso!",
+            success: "Conta criada! Verifique seu e-mail para o código de ativação.",
             user: {
                 id: user.id,
                 name: user.name,

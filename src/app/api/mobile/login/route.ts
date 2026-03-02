@@ -20,6 +20,14 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Credenciais inválidas ou usuário bloqueado" }, { status: 401 });
         }
 
+        if (!user.emailVerified) {
+            return NextResponse.json({
+                error: "E-mail não verificado",
+                needsVerification: true,
+                email: user.email
+            }, { status: 403 });
+        }
+
         if (!user.password) {
             return NextResponse.json({ error: "Faça login com sua conta do Google" }, { status: 401 });
         }

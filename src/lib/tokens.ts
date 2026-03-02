@@ -56,3 +56,40 @@ export const generatePasswordResetCode = async (email: string) => {
 
     return passwordResetToken;
 };
+
+export const generateVerificationCode = async (email: string) => {
+    // Gera código de 6 caracteres alfanuméricos
+    const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Evitando O, 0, I, 1
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+        code += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+
+    const expires = new Date(new Date().getTime() + 15 * 60 * 1000); // 15 minutos de validade
+
+    // Tenta deletar se já existir um código para este e-mail
+    const existingToken = await prisma.verificationToken.findFirst({
+        where: { identifier: email }
+    });
+
+    if (existingToken) {
+        await prisma.verificationToken.delete({
+            where: {
+                identifier_token: {
+                    identifier: existingToken.identifier,
+                    token: existingToken.token
+                }
+            }
+        });
+    }
+
+    const verificationToken = await prisma.verificationToken.create({
+        data: {
+            identifier: email,
+            token: code,
+            expires
+        }
+    });
+
+    return verificationToken;
+};

@@ -77,11 +77,7 @@ export default async function MobileAuthCallbackPage() {
                 <p style={styles.sub}>Você já pode retornar ao aplicativo.</p>
 
                 <button
-                    onClick={() => {
-                        // @ts-ignore
-                        window.close();
-                        window.location.href = 'mob://auth';
-                    }}
+                    id="close-button"
                     style={styles.button}
                 >
                     Voltar para o App
@@ -90,19 +86,21 @@ export default async function MobileAuthCallbackPage() {
                 <script
                     dangerouslySetInnerHTML={{
                         __html: `
+                            const btn = document.getElementById('close-button');
+                            
                             function forceClose() {
-                                // Tenta o fechamento padrão
                                 window.close();
-                                
-                                // Truque para Chrome/Android: tenta abrir a si mesmo para ganhar permissão de fechar
                                 window.open('', '_self', '');
                                 window.close();
-
-                                // Redireciona para o Deep Link (no iOS/Android isso costuma fechar o in-app browser)
                                 window.location.href = 'mob://auth';
                             }
 
-                            // Executa imediatamente e em intervalos
+                            // Handler para o botão
+                            if (btn) {
+                                btn.addEventListener('click', forceClose);
+                            }
+
+                            // Tentativa automática
                             forceClose();
                             setTimeout(forceClose, 1000);
                             setTimeout(forceClose, 3000);

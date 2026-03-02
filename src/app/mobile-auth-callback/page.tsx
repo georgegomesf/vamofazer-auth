@@ -74,10 +74,22 @@ export default async function MobileAuthCallbackPage() {
                     <path d="M7 12.5l3.5 3.5 6.5-7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 <h2 style={styles.title}>Autenticação concluída!</h2>
-                <p style={styles.sub}>Volte ao aplicativo. Esta janela fechará automaticamente...</p>
+                <p style={styles.sub}>Retornando para o aplicativo...</p>
                 <script
                     dangerouslySetInnerHTML={{
-                        __html: `setTimeout(() => { window.close(); }, 2000);`
+                        __html: `
+                            // Tenta fechar a janela e redirecionar para o app
+                            const closeAndRedirect = () => {
+                                window.close();
+                                window.location.href = 'mob://auth';
+                            };
+
+                            // Executa imediatamente e tenta novamente em intervalos curtos
+                            closeAndRedirect();
+                            setTimeout(closeAndRedirect, 500);
+                            setTimeout(closeAndRedirect, 1000);
+                            setTimeout(closeAndRedirect, 2000);
+                        `
                     }}
                 />
             </div>

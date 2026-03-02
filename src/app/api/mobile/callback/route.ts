@@ -7,13 +7,15 @@ export async function GET(request: Request) {
         const session = await auth();
 
         if (!session?.user) {
-            // Se não tiver sessão (não logou), redireciona o mobile de volta passando erro
-            return NextResponse.redirect("mob://auth?error=cancel");
+            // Redireciona via JS para fechar a aba no Expo sem token
+            return new NextResponse(buildHtmlRedirect("mob://auth?error=cancel"), {
+                headers: { "Content-Type": "text/html" },
+            });
         }
 
         const user = session.user;
 
-        // Gera token para o mobile 
+        // Gera token JWT para o mobile
         const secret = process.env.AUTH_SECRET || "default_mobile_secret";
         const token = jwt.sign(
             // @ts-ignore
@@ -22,7 +24,7 @@ export async function GET(request: Request) {
             { expiresIn: "7d" }
         );
 
-        // Prepara os dados codificados em URI para enviar via deep link do expo
+        // Prepara os dados do usuário codificados
         const userData = encodeURIComponent(JSON.stringify({
             id: user.id,
             email: user.email,
@@ -31,11 +33,35 @@ export async function GET(request: Request) {
             role: user.role
         }));
 
-        // Redireciona o WebBrowser de volta para o React Native / App
-        return NextResponse.redirect(`mob://auth?token=${token}&user=${userData}`);
+        // Redireciona via JS (mais confiável em Chrome Custom Tabs no Android)
+        const deepLink = `mob://auth?token=${token}&user=${userData}`;
+        return new NextResponse(buildHtmlRedirect(deepLink), {
+            headers: { "Content-Type": "text/html" },
+        });
 
     } catch (error) {
         console.error("Mobile callback error:", error);
-        return NextResponse.redirect("mob://auth?error=server_error");
+        return new NextResponse(buildHtmlRedirect("mob://auth?error=server_error"), {
+            headers: { "Content-Type": "text/html" },
+        });
     }
+}
+
+function buildHtmlRedirect(deepLink: string): string {
+    return `<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Redirecionando...</title>
+    <script>
+      window.onload = function() {
+        window.location.href = "${deepLink}";
+      };
+    </script>
+  </head>
+  <body>
+    <p>Redirecionando de volta ao aplicativo...</p>
+    <p>Se o app não abrir automaticamente, <a href="${deepLink}">clique aqui</a>.</p>
+  </body>
+</html>`;
 }

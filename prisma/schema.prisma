@@ -81,6 +81,15 @@ model PasswordResetToken {
   @@unique([email, token])
 }
 
+model MobileAuthSession {
+  id        String   @id @default(cuid())
+  sessionId String   @unique
+  token     String?
+  userData  String?
+  expires   DateTime
+  createdAt DateTime @default(now())
+}
+
 // Optional for WebAuthn support
 model Authenticator {
   credentialID         String  @unique

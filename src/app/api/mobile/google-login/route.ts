@@ -1,10 +1,12 @@
 import { signIn } from "@/auth";
 
 export async function GET(request: Request) {
-    // Ao acessar essa rota por um WebBrowser no mobile (GET literal), 
-    // a gente força a authjs a performar o login com google e definimos no redirectTo o callback custom
-    // que criamos antes, onde ele devolve o schema mob:// nativo
+    const { searchParams } = new URL(request.url);
+    const sessionId = searchParams.get('sessionId') || '';
+
+    // Inicia o fluxo OAuth do Google via NextAuth, redirecionando ao callback
+    // com o sessionId preservado na querystring
     await signIn("google", {
-        redirectTo: "/api/mobile/callback",
+        redirectTo: `/mobile-auth-callback?sessionId=${sessionId}`,
     });
 }

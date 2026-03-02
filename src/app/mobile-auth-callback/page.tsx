@@ -74,7 +74,12 @@ export default async function MobileAuthCallbackPage() {
                     <path d="M7 12.5l3.5 3.5 6.5-7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 <h2 style={styles.title}>Autenticação concluída!</h2>
-                <p style={styles.sub}>Volte ao aplicativo. Esta janela pode ser fechada.</p>
+                <p style={styles.sub}>Volte ao aplicativo. Esta janela fechará automaticamente...</p>
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: `setTimeout(() => { window.close(); }, 2000);`
+                    }}
+                />
             </div>
         );
     } catch (error: any) {

@@ -1,18 +1,17 @@
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import jwt from "jsonwebtoken";
+import { cookies } from "next/headers";
 
-interface Props {
-    searchParams: Promise<{ sessionId?: string }>;
-}
-
-export default async function MobileAuthCallbackPage({ searchParams }: Props) {
-    const { sessionId } = await searchParams;
+export default async function MobileAuthCallbackPage() {
+    // Lê o sessionId do cookie que foi salvo antes do OAuth iniciar
+    const cookieStore = await cookies();
+    const sessionId = cookieStore.get('mobile_session_id')?.value;
 
     if (!sessionId) {
         return (
             <div style={styles.container}>
-                <h2 style={styles.error}>Erro: sessionId ausente.</h2>
+                <h2 style={styles.error}>Erro: sessão não identificada.</h2>
                 <p style={styles.sub}>Tente fazer login novamente pelo aplicativo.</p>
             </div>
         );
@@ -64,6 +63,9 @@ export default async function MobileAuthCallbackPage({ searchParams }: Props) {
                 expires: new Date(Date.now() + 5 * 60 * 1000),
             },
         });
+
+        // Remove o cookie após usar
+        cookieStore.delete('mobile_session_id');
 
         return (
             <div style={styles.container}>

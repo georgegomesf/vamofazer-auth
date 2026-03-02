@@ -4,15 +4,22 @@ import { cookies } from "next/headers";
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const sessionId = searchParams.get('sessionId') || '';
+    const redirectUri = searchParams.get('redirectUri') || 'mob://auth';
 
-    // Salva o sessionId num cookie antes de redirecionar para o OAuth
-    // O cookie persiste durante todo o fluxo do Google e é lido no callback
+    // Salva o sessionId e redirectUri num cookie antes de redirecionar para o OAuth
     const cookieStore = await cookies();
     cookieStore.set('mobile_session_id', sessionId, {
         httpOnly: true,
         secure: true,
         sameSite: 'lax',
         maxAge: 60 * 5, // 5 minutos
+        path: '/',
+    });
+    cookieStore.set('mobile_redirect_uri', redirectUri, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'lax',
+        maxAge: 60 * 5,
         path: '/',
     });
 

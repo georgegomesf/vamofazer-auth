@@ -147,10 +147,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return token;
         },
         async redirect({ url, baseUrl }) {
-            // Permite redirecionamentos para o projeto bck e domínios da VamoFazer
-            if (url.startsWith(baseUrl)) return url;
-            if (url.startsWith("http://localhost:3003")) return url;
             if (url.includes("vamofazer.com.br")) return url;
+            if (url.startsWith("/")) return `${baseUrl}${url}`;
             return baseUrl;
         },
     },

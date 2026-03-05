@@ -7,6 +7,8 @@ import Email from "next-auth/providers/email";
 import bcrypt from "bcryptjs";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+    trustHost: true,
+    secret: process.env.AUTH_SECRET,
     adapter: PrismaAdapter(prisma),
     providers: [
         Google({
@@ -172,12 +174,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     cookies: {
         sessionToken: {
-            name: `authjs.session-token`,
+            name: `${process.env.NODE_ENV === "production" ? "__Secure-" : ""}authjs.session-token`,
             options: {
                 httpOnly: true,
                 sameSite: "lax",
                 path: "/",
                 secure: process.env.NODE_ENV === "production",
+                domain: process.env.NODE_ENV === "production" ? ".vamofazer.com.br" : undefined,
             },
         },
     },

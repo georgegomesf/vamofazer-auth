@@ -39,8 +39,19 @@ export default auth(async (req) => {
                                 .setExpirationTime("2m")
                                 .sign(secret);
 
+                            // Sempre forçamos o caminho do callback em redirecionamentos entre domínios
+                            // para garantir que o token 'st' seja processado pelo app de destino.
+                            if (!url.pathname.includes("/auth/callback")) {
+                                console.log(`AUTH PROXY: Forcing callback path for ${targetHost}${url.pathname}`);
+                                const originalPath = url.pathname + url.search;
+                                url.pathname = "/auth/callback";
+
+                                // Preservamos o destino original para o app redirecionar após o login
+                                url.searchParams.set("dest", originalPath);
+                            }
+
                             url.searchParams.set("st", token);
-                            console.log("AUTH PROXY: Token appended successfully");
+                            console.log(`AUTH PROXY: Token appended and targeting ${url.pathname}`);
                         } catch (err) {
                             console.error("AUTH PROXY: Failed to create transfer token:", err);
                         }

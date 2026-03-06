@@ -25,8 +25,8 @@ export default function LoginForm() {
 
     const handleGoogleLogin = async () => {
         setLoading(true);
-        // signIn handles both relative and absolute callbackUrls, 
-        // but let's be super explicit in the redirect logic.
+        // Em produção, se o callbackUrl for absoluto, o NextAuth pode ter dificuldade se não estiver configurado
+        // para confiar no host. Como estamos em domínios diferentes, garantimos a reconstrução.
         await signIn("google", { callbackUrl });
     };
 
@@ -46,13 +46,9 @@ export default function LoginForm() {
                 setError("E-mail ou senha inválidos");
                 setLoading(false);
             } else {
-                // Se o callbackUrl for uma URL absoluta (ex: http://localhost:3003), 
-                // o router.push não funcionará. Usamos window.location.href.
-                if (callbackUrl.startsWith("http")) {
-                    window.location.href = callbackUrl;
-                } else {
-                    router.push(callbackUrl);
-                }
+                // Força o redirecionamento manual para garantir que o middleware do serviço auth
+                // (proxy.ts) seja interceptado se estivermos redirecionando para fora.
+                window.location.href = callbackUrl;
             }
         } catch (err) {
             setError("Algo deu errado. Tente novamente.");

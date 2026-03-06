@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ShieldPlus } from "lucide-react";
 import RegisterForm from "@/components/auth/register-form";
+import { Suspense } from "react";
 
 export default async function SignUpPage({ searchParams }: { searchParams: Promise<{ callbackUrl?: string }> }) {
     const { callbackUrl } = await searchParams;
@@ -21,7 +22,9 @@ export default async function SignUpPage({ searchParams }: { searchParams: Promi
                     {/* <p className="text-zinc-400">Junte-se a nós para começar sua jornada</p> */}
                 </div>
 
-                <RegisterForm />
+                <Suspense fallback={<div className="text-center text-zinc-500">Carregando...</div>}>
+                    <RegisterForm />
+                </Suspense>
 
                 <p className="mt-4 text-center text-zinc-500 text-sm">
                     Já tem uma conta?{" "}

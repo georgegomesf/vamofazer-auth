@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import ResetForm from "@/components/auth/reset-form";
 
 export default function ResetPage() {
@@ -6,7 +7,9 @@ export default function ResetPage() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,#1a1033_0%,transparent_70%)] opacity-50" />
 
             <div className="w-full max-w-md bg-zinc-900/50 backdrop-blur-xl border border-zinc-800 rounded-3xl p-8 shadow-2xl relative z-10">
-                <ResetForm />
+                <Suspense fallback={<div>Carregando...</div>}>
+                    <ResetForm />
+                </Suspense>
             </div>
         </div>
     );

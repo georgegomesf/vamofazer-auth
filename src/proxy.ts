@@ -6,8 +6,9 @@ export default auth(async (req) => {
 
     const isAuthRoute = nextUrl.pathname.startsWith("/auth");
     const isSignOutRoute = nextUrl.pathname.replace(/\/$/, "") === "/auth/signout";
+    const isSignInRoute = nextUrl.pathname.replace(/\/$/, "") === "/auth/signin";
 
-    if (isAuthRoute && !isSignOutRoute) {
+    if (isAuthRoute && !isSignOutRoute && !isSignInRoute) {
         if (isLoggedIn) {
             const callbackUrl = nextUrl.searchParams.get("callbackUrl");
             console.log(`AUTH PROXY: User already logged in on auth route. redirecting to ${callbackUrl || "/"}`);

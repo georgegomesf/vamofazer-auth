@@ -12,7 +12,8 @@ export default auth(async (req) => {
             console.log(`AUTH PROXY: User already logged in on auth route. redirecting to ${callbackUrl || "/"}`);
             if (callbackUrl) {
                 try {
-                    const url = new URL(callbackUrl);
+                    // Se o callbackUrl for relativo, usamos o host atual como base
+                    const url = new URL(callbackUrl, nextUrl.origin);
 
                     // Se o domínio de destino for diferente do atual, enviamos um token de transferência
                     const currentHost = req.headers.get("host") || "";

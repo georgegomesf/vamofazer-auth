@@ -65,11 +65,14 @@ export async function registerUser(formData: FormData) {
     } catch (e) { }
 
     // Garante que o projectId vá na query para o e-mail sender encontrar
-    const finalCallbackUrl = projectId
+    const enrichedCallback = projectId
         ? (originalCallback.includes("?")
             ? `${originalCallback}&projectId=${projectId}`
             : `${originalCallback}?projectId=${projectId}`)
         : originalCallback;
+
+    // Adiciona o pulo (hop) pelo @auth para garantir a transferência de sessão via middleware
+    const finalCallbackUrl = `/auth/signin?callbackUrl=${encodeURIComponent(enrichedCallback)}`;
 
     try {
         const user = await prisma.user.create({

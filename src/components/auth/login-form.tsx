@@ -25,9 +25,10 @@ export default function LoginForm() {
 
     const handleGoogleLogin = async () => {
         setLoading(true);
-        // Em produção, se o callbackUrl for absoluto, o NextAuth pode ter dificuldade se não estiver configurado
-        // para confiar no host. Como estamos em domínios diferentes, garantimos a reconstrução.
-        await signIn("google", { callbackUrl });
+        // Em vez de ir direto para o front, enviamos para uma rota protegida no @auth
+        // que o middleware (proxy.ts) irá interceptar para anexar o token 'st'.
+        const transferUrl = `/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+        await signIn("google", { callbackUrl: transferUrl });
     };
 
     const handleCredentialsLogin = async (e: React.FormEvent) => {
@@ -46,9 +47,10 @@ export default function LoginForm() {
                 setError("E-mail ou senha inválidos");
                 setLoading(false);
             } else {
-                // Força o redirecionamento manual para garantir que o middleware do serviço auth
-                // (proxy.ts) seja interceptado se estivermos redirecionando para fora.
-                window.location.href = callbackUrl;
+                // Redirecionamos para a própria rota de signin do @auth.
+                // Como o usuário acabou de logar, o middleware (proxy.ts) vai notar
+                // que ele está autenticado e fará o "salto" para o front com o token 'st'.
+                window.location.href = `/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`;
             }
         } catch (err) {
             setError("Algo deu errado. Tente novamente.");
@@ -74,10 +76,13 @@ export default function LoginForm() {
                 return;
             }
 
-            // Use the callbackUrl from searchParams to return the user to the origin after clicking the email link
+            // Usamos a rota de signin do @auth como ponte para o middleware interceptar
+            // o clique no e-mail e anexar o token de transferência antes de ir para o front.
+            const transferUrl = `/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+
             const res = await signIn("email", {
                 email: userEmail,
-                callbackUrl: callbackUrl,
+                callbackUrl: transferUrl,
                 redirect: false
             });
 

@@ -5,7 +5,7 @@ export default auth(async (req) => {
     const isLoggedIn = !!req.auth;
 
     const isAuthRoute = nextUrl.pathname.startsWith("/auth");
-    const isSignOutRoute = nextUrl.pathname === "/auth/signout";
+    const isSignOutRoute = nextUrl.pathname.replace(/\/$/, "") === "/auth/signout";
 
     if (isAuthRoute && !isSignOutRoute) {
         if (isLoggedIn) {

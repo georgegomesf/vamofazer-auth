@@ -18,21 +18,31 @@ export default auth(async (req) => {
                     const currentHost = req.headers.get("host") || "";
                     const targetHost = url.host;
 
-                    if (currentHost !== targetHost && req.auth?.user) {
-                        const { SignJWT } = await import("jose");
-                        const secret = new TextEncoder().encode(process.env.AUTH_SECRET);
-                        const token = await new SignJWT({
-                            id: req.auth.user.id,
-                            email: req.auth.user.email,
-                            name: req.auth.user.name,
-                            // @ts-ignore
-                            role: req.auth.user.role
-                        })
-                            .setProtectedHeader({ alg: "HS256" })
-                            .setExpirationTime("2m")
-                            .sign(secret);
+                    console.log(`AUTH PROXY: Origin=${currentHost}, Destination=${targetHost}`);
 
-                        url.searchParams.set("st", token);
+                    if (currentHost !== targetHost && req.auth?.user) {
+                        try {
+                            const { SignJWT } = await import("jose");
+                            const secret = new TextEncoder().encode(process.env.AUTH_SECRET);
+
+                            console.log(`AUTH PROXY: Creating transfer token for user ${req.auth.user.email}`);
+
+                            const token = await new SignJWT({
+                                id: req.auth.user.id,
+                                email: req.auth.user.email,
+                                name: req.auth.user.name,
+                                // @ts-ignore
+                                role: req.auth.user.role || "USER"
+                            })
+                                .setProtectedHeader({ alg: "HS256" })
+                                .setExpirationTime("2m")
+                                .sign(secret);
+
+                            url.searchParams.set("st", token);
+                            console.log("AUTH PROXY: Token appended successfully");
+                        } catch (err) {
+                            console.error("AUTH PROXY: Failed to create transfer token:", err);
+                        }
                     }
 
                     return Response.redirect(url.toString());

@@ -16,7 +16,9 @@ export default auth(async (req) => {
 
                     // Se o domínio de destino for diferente do atual, enviamos um token de transferência
                     const currentHost = req.headers.get("host") || "";
-                    if (!callbackUrl.includes(currentHost) && req.auth?.user) {
+                    const targetHost = url.host;
+
+                    if (currentHost !== targetHost && req.auth?.user) {
                         const { SignJWT } = await import("jose");
                         const secret = new TextEncoder().encode(process.env.AUTH_SECRET);
                         const token = await new SignJWT({

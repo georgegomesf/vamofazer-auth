@@ -11,27 +11,33 @@ function SignOutContent() {
 
     useEffect(() => {
         const performSignOut = async () => {
-            // 1. Limpa a sessão global no @auth
-            await signOut({ redirect: false });
+            console.log("AUTH GLOBAL SIGNOUT: Starting process...");
 
-            // 2. Encaminha para limpar os cookies nos domínios específicos
-            // O ideal é passar por todos os apps se o domínio do @auth for central.
+            // 1. Limpa a sessão global no @auth (domínio .vamofazer.com.br)
+            // Usamos redirect: false para manter o controle do fluxo aqui.
+            try {
+                await signOut({ redirect: false });
+            } catch (e) {
+                console.error("AUTH GLOBAL SIGNOUT: Error clearing local session", e);
+            }
+
+            // 2. Corrente de Logout em Domínios Diferentes
+            // Devemos passar por todos os apps se o domínio do @auth for central.
 
             // Ordem: Admin -> Front -> Destino Final
             const bckUrl = "https://adm.vamofazer.com.br/auth/signout";
             const frontUrl = "https://myrviaegeorge.com.br/auth/signout";
 
-            // Se ainda não estamos vindo de uma dessas limpezas, iniciamos a corrente
-            const currentUrl = window.location.href;
             const fromBck = searchParams.get("from") === "bck";
             const fromFront = searchParams.get("from") === "front";
 
             if (!fromBck && !fromFront) {
-                // Inicia a corrente: do @auth vai para o @bck
+                console.log("AUTH GLOBAL SIGNOUT: Directing to Admin logout...");
+                // Inicia a corrente: vai para o Admin
                 const nextUrl = new URL(bckUrl);
                 nextUrl.searchParams.set("from", "auth");
 
-                // O próximo do @bck deve ser o @front
+                // O Admin depois deve mandar para o Front
                 const bckCallback = new URL(frontUrl);
                 bckCallback.searchParams.set("from", "bck");
                 bckCallback.searchParams.set("callbackUrl", finalCallbackUrl);
@@ -39,7 +45,7 @@ function SignOutContent() {
                 nextUrl.searchParams.set("callbackUrl", bckCallback.toString());
                 window.location.href = nextUrl.toString();
             } else {
-                // Se já terminamos a corrente de redirecionamentos, vai para o destino final
+                console.log("AUTH GLOBAL SIGNOUT: Logout chain complete. Going to final destination.");
                 window.location.href = finalCallbackUrl;
             }
         };
@@ -50,7 +56,10 @@ function SignOutContent() {
     return (
         <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center text-white p-6">
             <Loader2 className="w-10 h-10 animate-spin text-blue-500 mb-4" />
-            <p className="text-zinc-500 animate-pulse font-medium text-lg uppercase tracking-widest">Sincronizando Logout Global...</p>
+            <p className="text-zinc-500 animate-pulse font-medium text-lg uppercase tracking-widest leading-relaxed text-center">
+                Desconectando de todos os sistemas...<br />
+                <span className="text-[10px] opacity-50">Sincronizando Logout Global</span>
+            </p>
         </div>
     );
 }

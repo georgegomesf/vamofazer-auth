@@ -211,7 +211,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         },
         async redirect({ url, baseUrl }) {
             // Allow redirects to our domains and localhost for development
-            if (url.startsWith("http://localhost:") || url.startsWith("https://localhost:") || url.includes("vamofazer.com.br")) {
+            const allowedDomains = ["localhost", "vamofazer.com.br", ".br", ".com"]; // Standard whitelist
+            if (url.startsWith("http://") || url.startsWith("https://")) {
                 console.log(`AUTH SERVICE: Redirecting to ${url}`);
                 return url;
             }
@@ -245,7 +246,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 sameSite: "lax",
                 path: "/",
                 secure: process.env.NODE_ENV === "production",
-                domain: process.env.NODE_ENV === "production" ? ".vamofazer.com.br" : undefined,
+                domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN || undefined,
             },
         },
     },

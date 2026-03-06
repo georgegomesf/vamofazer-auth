@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 
-export default auth((req) => {
+export default auth(async (req) => {
     const { nextUrl } = req;
     const isLoggedIn = !!req.auth;
 
@@ -13,6 +13,26 @@ export default auth((req) => {
             if (callbackUrl) {
                 try {
                     const url = new URL(callbackUrl);
+
+                    // Se o domínio de destino for diferente do atual, enviamos um token de transferência
+                    const currentHost = req.headers.get("host") || "";
+                    if (!callbackUrl.includes(currentHost) && req.auth?.user) {
+                        const { SignJWT } = await import("jose");
+                        const secret = new TextEncoder().encode(process.env.AUTH_SECRET);
+                        const token = await new SignJWT({
+                            id: req.auth.user.id,
+                            email: req.auth.user.email,
+                            name: req.auth.user.name,
+                            // @ts-ignore
+                            role: req.auth.user.role
+                        })
+                            .setProtectedHeader({ alg: "HS256" })
+                            .setExpirationTime("2m")
+                            .sign(secret);
+
+                        url.searchParams.set("st", token);
+                    }
+
                     return Response.redirect(url.toString());
                 } catch (e) {
                     console.error("AUTH PROXY: Invalid callbackUrl:", callbackUrl);

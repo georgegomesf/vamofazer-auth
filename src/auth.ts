@@ -5,6 +5,7 @@ import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import Email from "next-auth/providers/email";
 import bcrypt from "bcryptjs";
+import { headers } from "next/headers";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
     trustHost: true,
@@ -20,7 +21,58 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             server: {}, // Dummy to satisfy NextAuth initialization, our custom sendVerificationRequest uses fetch
             from: process.env.EMAIL_FROM,
             async sendVerificationRequest({ identifier: email, url, provider }) {
+                const verificationUrl = new URL(url);
+                const callbackUrl = verificationUrl.searchParams.get("callbackUrl");
                 const { host } = new URL(url);
+
+                let displayHost = host;
+                let projectName = "VamoFazer";
+                let projectEmail = process.env.EMAIL_FROM;
+
+                if (callbackUrl) {
+                    try {
+                        let hostToUse = "";
+                        if (callbackUrl.startsWith("http")) {
+                            const cbUrl = new URL(callbackUrl);
+                            hostToUse = cbUrl.host;
+                            const projectId = cbUrl.searchParams.get("projectId");
+                            if (projectId) {
+                                // @ts-ignore
+                                const project = await prisma.project.findFirst({ where: { id: projectId } });
+                                if (project) {
+                                    projectName = project.name;
+                                    if (project.email) projectEmail = project.email;
+                                    displayHost = hostToUse;
+                                }
+                            }
+                        }
+
+                        // Se ainda não encontrou o projeto ou o link era relativo
+                        if (projectName === "VamoFazer") {
+                            const headerList = await headers();
+                            const currentHost = headerList.get("host") || "";
+                            hostToUse = hostToUse || currentHost;
+
+                            // @ts-ignore
+                            const project = await prisma.project.findFirst({
+                                where: {
+                                    OR: [
+                                        { link: { contains: hostToUse } }
+                                    ]
+                                }
+                            });
+
+                            if (project) {
+                                projectName = project.name;
+                                if (project.email) projectEmail = project.email;
+                                displayHost = hostToUse;
+                            } else if (hostToUse.includes("localhost:3004")) {
+                                projectName = "Myrvia & George";
+                                displayHost = hostToUse;
+                            }
+                        }
+                    } catch (e) { }
+                }
 
                 const res = await fetch(process.env.BREVO_API_URL || 'https://api.brevo.com/v3/smtp/email', {
                     method: 'POST',
@@ -31,21 +83,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     },
                     body: JSON.stringify({
                         sender: {
-                            name: "VamoFazer",
-                            email: process.env.EMAIL_FROM
+                            name: projectName,
+                            email: projectEmail
                         },
                         to: [{ email }],
-                        subject: `Seu link de acesso para ${host}`,
+                        subject: `Seu link de acesso para ${projectName}`,
                         htmlContent: `
               <div style="background: #050505; color: white; padding: 40px; font-family: sans-serif; border-radius: 24px; border: 1px solid #27272a; max-width: 600px; margin: auto;">
                 <div style="margin-bottom: 30px; text-align: center;">
-                  <h1 style="color: #3b82f6; margin: 0; font-size: 24px;">VamoFazer</h1>
+                  <h1 style="color: #3b82f6; margin: 0; font-size: 24px;">${projectName}</h1>
                 </div>
-                <p style="color: #a1a1aa; font-size: 16px; line-height: 1.5;">Você solicitou um acesso seguro à nossa plataforma. Clique no botão abaixo para confirmar sua identidade e entrar.</p>
+                <p style="color: #a1a1aa; font-size: 16px; line-height: 1.5;">Você solicitou um acesso seguro à plataforma <strong>${projectName}</strong>. Clique no botão abaixo para confirmar sua identidade e entrar.</p>
                 <div style="text-align: center; margin: 40px 0;">
                   <a href="${url}" style="background: #3b82f6; color: white; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: bold; font-size: 16px; display: inline-block;">Confirmar Identidade</a>
                 </div>
-                <p style="font-size: 12px; color: #52525b; text-align: center; margin-top: 40px;">Este link expira em breve. Se você não solicitou este acesso, pode ignorar este e-mail com segurança.</p>
+                <p style="font-size: 12px; color: #52525b; text-align: center; margin-top: 40px;">Este link expira em breve. Se você não solicitou este acesso através de ${projectName}, pode ignorar este e-mail com segurança.</p>
               </div>
             `
                     })
@@ -103,25 +155,36 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
                 // Se for login via Google ou Email
                 if (account?.provider === "google" || account?.provider === "email") {
-                    await prisma.user.updateMany({
-                        where: {
-                            email: user.email,
-                            OR: [
-                                { role: "VISITOR" },
-                                { emailVerified: null }
-                            ]
-                        },
-                        data: {
-                            role: "USER",
-                            emailVerified: new Date()
-                        }
-                    });
+                    // Para o provedor Email, a verificação manual aqui só deve ocorrer 
+                    // se o NextAuth já tiver validado o token (o adapter preenche o user)
+                    // No caso do Google, confiamos sempre.
+                    // @ts-ignore
+                    const isGoogle = account.provider === "google";
+                    // @ts-ignore
+                    const isEmailVerified = account.provider === "email" && user.emailVerified;
 
-                    // Atualiza o objeto do usuário na memória para que o JWT receba os dados novos imediatamente
-                    // @ts-ignore
-                    user.role = "USER";
-                    // @ts-ignore
-                    user.emailVerified = new Date();
+                    if (isGoogle || isEmailVerified) {
+                        await prisma.user.updateMany({
+                            where: {
+                                email: user.email,
+                                OR: [
+                                    { role: "VISITOR" },
+                                    { emailVerified: null }
+                                ]
+                            },
+                            data: {
+                                role: "USER",
+                                // @ts-ignore
+                                emailVerified: user.emailVerified || new Date()
+                            }
+                        });
+
+                        // Atualiza o objeto do usuário na memória para a sessão atual
+                        // @ts-ignore
+                        user.role = "USER";
+                        // @ts-ignore
+                        if (!user.emailVerified) user.emailVerified = new Date();
+                    }
                 }
 
                 return true;
@@ -147,23 +210,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return token;
         },
         async redirect({ url, baseUrl }) {
-            if (url.includes("vamofazer.com.br")) return url;
+            // Allow redirects to our domains and localhost for development
+            if (url.startsWith("http://localhost:") || url.startsWith("https://localhost:") || url.includes("vamofazer.com.br")) {
+                console.log(`AUTH SERVICE: Redirecting to ${url}`);
+                return url;
+            }
             if (url.startsWith("/")) return `${baseUrl}${url}`;
             return baseUrl;
         },
     },
     events: {
         async createUser({ user }) {
-            // Garante que novos usuários via Google/Email já nasçam como USER
+            // Apenas promove o usuário a USER, mas NÃO marca emailVerified aqui.
+            // O emailVerified será preenchido pelo callback signIn somente após o clique no link.
             if (user.id && user.email) {
                 await prisma.user.update({
                     where: { id: user.id },
                     data: {
-                        role: "USER",
-                        emailVerified: new Date()
+                        role: "USER"
                     }
                 });
-                console.log("Novo usuário criado e promovido:", user.email);
+                console.log("Novo usuário criado e promovido a USER (aguardando confirmação):", user.email);
             }
         }
     },

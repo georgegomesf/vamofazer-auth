@@ -5,7 +5,7 @@ import { Mail, Lock, User, ShieldPlus, Loader2 } from "lucide-react";
 import { GoogleIcon } from "@/components/icons";
 import Link from "next/link";
 import { registerUser } from "@/actions/register";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 
 export default function RegisterForm() {
@@ -18,6 +18,8 @@ export default function RegisterForm() {
     const [success, setSuccess] = useState("");
 
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const callbackUrl = searchParams.get("callbackUrl") || "/";
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -35,6 +37,7 @@ export default function RegisterForm() {
         formData.append("name", name);
         formData.append("email", email);
         formData.append("password", password);
+        formData.append("callbackUrl", callbackUrl);
 
         const result = await registerUser(formData);
 
@@ -42,13 +45,13 @@ export default function RegisterForm() {
             setError(result.error);
             setLoading(false);
         } else {
-            router.push(`/auth/signin?email_sent=true&email=${encodeURIComponent(email)}`);
+            router.push(`/auth/signin?email_sent=true&email=${encodeURIComponent(email)}&callbackUrl=${encodeURIComponent(callbackUrl)}`);
         }
     };
 
     const handleGoogleRegister = async () => {
         setLoading(true);
-        await signIn("google", { callbackUrl: "/" });
+        await signIn("google", { callbackUrl });
     };
 
     return (
@@ -136,7 +139,7 @@ export default function RegisterForm() {
                 </button>
             </form>
 
-            <div className="relative my-8">
+            <div className="relative my-4">
                 <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-zinc-800" />
                 </div>

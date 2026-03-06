@@ -4,12 +4,16 @@ import { useState } from "react";
 import { Mail, ShieldQuestion, Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { resetPassword } from "@/actions/reset";
+import { useSearchParams } from "next/navigation";
 
 export default function ResetForm() {
     const [email, setEmail] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
+
+    const searchParams = useSearchParams();
+    const callbackUrl = searchParams.get("callbackUrl") || "";
 
     const handleReset = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -19,6 +23,7 @@ export default function ResetForm() {
 
         const formData = new FormData();
         formData.append("email", email);
+        formData.append("callbackUrl", callbackUrl);
 
         const result = await resetPassword(formData);
 

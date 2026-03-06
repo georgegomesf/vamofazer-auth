@@ -2,10 +2,11 @@
 
 import { signIn } from "next-auth/react";
 import { useState } from "react";
-import { Mail, Lock, ShieldCheck, MailQuestion, Loader2 } from "lucide-react";
+import { Mail, Lock, User, ShieldCheck, MailQuestion, Loader2 } from "lucide-react";
 import { GoogleIcon } from "@/components/icons";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { prepareMagicLinkUser } from "@/actions/magic-link";
 
 export default function LoginForm() {
     const [email, setEmail] = useState("");
@@ -20,8 +21,12 @@ export default function LoginForm() {
     const verified = searchParams.get("verified") === "true";
     const registeredEmail = searchParams.get("email") || "";
 
+    const [magicLinkSent, setMagicLinkSent] = useState(false);
+
     const handleGoogleLogin = async () => {
         setLoading(true);
+        // signIn handles both relative and absolute callbackUrls, 
+        // but let's be super explicit in the redirect logic.
         await signIn("google", { callbackUrl });
     };
 
@@ -56,12 +61,40 @@ export default function LoginForm() {
     };
 
     const handleMagicLink = async () => {
-        if (!email && !registeredEmail) {
+        const userEmail = email || registeredEmail;
+        if (!userEmail) {
             setError("Digite seu e-mail primeiro");
             return;
         }
+
         setLoading(true);
-        await signIn("email", { email: email || registeredEmail, redirectTo: "/auth/signin?verified=true" });
+        setError("");
+
+        try {
+            const prep = await prepareMagicLinkUser(userEmail);
+            if (prep.error) {
+                setError(prep.error);
+                setLoading(false);
+                return;
+            }
+
+            // Use the callbackUrl from searchParams to return the user to the origin after clicking the email link
+            const res = await signIn("email", {
+                email: userEmail,
+                callbackUrl: callbackUrl,
+                redirect: false
+            });
+
+            if (res?.error) {
+                setError("Não foi possível enviar o link. Verifique o e-mail.");
+            } else {
+                setMagicLinkSent(true);
+            }
+        } catch (err) {
+            setError("Erro ao solicitar link de acesso.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -69,6 +102,11 @@ export default function LoginForm() {
             {emailSent && (
                 <div className="bg-blue-500/10 border border-blue-500/50 text-blue-400 p-4 rounded-xl text-sm leading-relaxed">
                     Conta criada! Enviamos um link de confirmação para <strong>{registeredEmail}</strong>. Verifique sua caixa de entrada para ativar sua conta.
+                </div>
+            )}
+            {magicLinkSent && (
+                <div className="bg-blue-500/10 border border-blue-500/50 text-blue-400 p-4 rounded-xl text-sm leading-relaxed text-center">
+                    Link de acesso enviado! Verifique seu e-mail (<strong>{email || registeredEmail}</strong>) para entrar.
                 </div>
             )}
             {verified && (
@@ -86,7 +124,7 @@ export default function LoginForm() {
                 <span>Continuar com Google</span>
             </button>
 
-            <div className="relative my-8">
+            <div className="relative my-4">
                 <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-zinc-800" />
                 </div>

@@ -1,5 +1,7 @@
-export const sendPasswordResetEmail = async (email: string, token: string) => {
+export const sendPasswordResetEmail = async (email: string, token: string, project?: { name: string, email?: string | null }) => {
     const resetLink = `${process.env.NEXTAUTH_URL}/auth/new-password?token=${token}`;
+    const projectName = project?.name || "VamoFazer";
+    const projectEmail = project?.email || process.env.EMAIL_FROM;
 
     const res = await fetch(process.env.BREVO_API_URL || 'https://api.brevo.com/v3/smtp/email', {
         method: 'POST',
@@ -10,19 +12,19 @@ export const sendPasswordResetEmail = async (email: string, token: string) => {
         },
         body: JSON.stringify({
             sender: {
-                name: "VamoFazer",
-                email: process.env.EMAIL_FROM
+                name: projectName,
+                email: projectEmail
             },
             to: [{ email }],
-            subject: "Recuperação de Senha - VamoFazer",
+            subject: `Recuperação de Senha - ${projectName}`,
             htmlContent: `
                 <div style="background: #050505; color: white; padding: 40px; font-family: sans-serif; border-radius: 24px; border: 1px solid #27272a; max-width: 600px; margin: auto;">
                     <div style="margin-bottom: 30px; text-align: center;">
-                        <h1 style="color: #3b82f6; margin: 0; font-size: 24px;">VamoFazer</h1>
+                        <h1 style="color: #3b82f6; margin: 0; font-size: 24px;">${projectName}</h1>
                     </div>
                     <h2 style="color: white; text-align: center;">Recuperação de Senha</h2>
                     <p style="color: #a1a1aa; font-size: 16px; line-height: 1.5; text-align: center;">
-                        Você solicitou a alteração da sua senha. Clique no botão abaixo para definir uma nova senha para sua conta.
+                        Você solicitou a alteração da sua senha para acessar <strong>${projectName}</strong>. Clique no botão abaixo para definir uma nova senha para sua conta.
                     </p>
                     <div style="text-align: center; margin: 40px 0;">
                         <a href="${resetLink}" style="background: #3b82f6; color: white; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: bold; font-size: 16px; display: inline-block;">Redefinir Senha</a>
@@ -42,7 +44,10 @@ export const sendPasswordResetEmail = async (email: string, token: string) => {
     return { success: true };
 };
 
-export const sendPasswordResetCodeEmail = async (email: string, code: string) => {
+export const sendPasswordResetCodeEmail = async (email: string, code: string, project?: { name: string, email?: string | null }) => {
+    const projectName = project?.name || "VamoFazer";
+    const projectEmail = project?.email || process.env.EMAIL_FROM;
+
     const res = await fetch(process.env.BREVO_API_URL || 'https://api.brevo.com/v3/smtp/email', {
         method: 'POST',
         headers: {
@@ -52,19 +57,19 @@ export const sendPasswordResetCodeEmail = async (email: string, code: string) =>
         },
         body: JSON.stringify({
             sender: {
-                name: "VamoFazer",
-                email: process.env.EMAIL_FROM
+                name: projectName,
+                email: projectEmail
             },
             to: [{ email }],
-            subject: "Código de Recuperação - VamoFazer",
+            subject: `Código de Recuperação - ${projectName}`,
             htmlContent: `
                 <div style="background: #050505; color: white; padding: 40px; font-family: sans-serif; border-radius: 24px; border: 1px solid #27272a; max-width: 600px; margin: auto;">
                     <div style="margin-bottom: 30px; text-align: center;">
-                        <h1 style="color: #3b82f6; margin: 0; font-size: 24px;">VamoFazer</h1>
+                        <h1 style="color: #3b82f6; margin: 0; font-size: 24px;">${projectName}</h1>
                     </div>
                     <h2 style="color: white; text-align: center;">Código de Recuperação</h2>
                     <p style="color: #a1a1aa; font-size: 16px; line-height: 1.5; text-align: center;">
-                        Use o código abaixo para redefinir sua senha no aplicativo.
+                        Use o código abaixo para redefinir sua senha no aplicativo de <strong>${projectName}</strong>.
                     </p>
                     <div style="text-align: center; margin: 40px 0;">
                         <div style="background: #18181b; color: #3b82f6; padding: 24px; border-radius: 16px; font-weight: bold; font-size: 32px; display: inline-block; letter-spacing: 8px; border: 1px solid #27272a;">
@@ -86,8 +91,10 @@ export const sendPasswordResetCodeEmail = async (email: string, code: string) =>
     return { success: true };
 };
 
-export const sendGoogleAuthWarningEmail = async (email: string) => {
-    // ... existing code ...
+export const sendGoogleAuthWarningEmail = async (email: string, project?: { name: string, email?: string | null }) => {
+    const projectName = project?.name || "VamoFazer";
+    const projectEmail = project?.email || process.env.EMAIL_FROM;
+
     const res = await fetch(process.env.BREVO_API_URL || 'https://api.brevo.com/v3/smtp/email', {
         method: 'POST',
         headers: {
@@ -97,19 +104,19 @@ export const sendGoogleAuthWarningEmail = async (email: string) => {
         },
         body: JSON.stringify({
             sender: {
-                name: "VamoFazer",
-                email: process.env.EMAIL_FROM
+                name: projectName,
+                email: projectEmail
             },
             to: [{ email }],
-            subject: "Aviso de Segurança - VamoFazer",
+            subject: `Aviso de Segurança - ${projectName}`,
             htmlContent: `
                 <div style="background: #050505; color: white; padding: 40px; font-family: sans-serif; border-radius: 24px; border: 1px solid #27272a; max-width: 600px; margin: auto;">
                     <div style="margin-bottom: 30px; text-align: center;">
-                        <h1 style="color: #3b82f6; margin: 0; font-size: 24px;">VamoFazer</h1>
+                        <h1 style="color: #3b82f6; margin: 0; font-size: 24px;">${projectName}</h1>
                     </div>
                     <h2 style="color: white; text-align: center;">Tentativa de Recuperação de Senha</h2>
                     <p style="color: #a1a1aa; font-size: 16px; line-height: 1.5; text-align: center;">
-                        Identificamos uma solicitação de recuperação de senha para sua conta. No entanto, sua conta está configurada para acesso exclusivo via <strong>Google</strong>.
+                        Identificamos uma solicitação de recuperação de senha para sua conta no <strong>${projectName}</strong>. No entanto, sua conta está configurada para acesso exclusivo via <strong>Google</strong>.
                     </p>
                     <p style="color: #a1a1aa; font-size: 16px; line-height: 1.5; text-align: center; margin-top: 20px;">
                         Por medida de segurança, não é possível definir uma senha manual. Por favor, utilize o botão "Entrar com Google" na nossa tela de login.
@@ -128,7 +135,10 @@ export const sendGoogleAuthWarningEmail = async (email: string) => {
     return { success: res.ok };
 };
 
-export const sendVerificationCodeEmail = async (email: string, code: string) => {
+export const sendVerificationCodeEmail = async (email: string, code: string, project?: { name: string, email?: string | null }) => {
+    const projectName = project?.name || "VamoFazer";
+    const projectEmail = project?.email || process.env.EMAIL_FROM;
+
     const res = await fetch(process.env.BREVO_API_URL || 'https://api.brevo.com/v3/smtp/email', {
         method: 'POST',
         headers: {
@@ -138,19 +148,19 @@ export const sendVerificationCodeEmail = async (email: string, code: string) => 
         },
         body: JSON.stringify({
             sender: {
-                name: "VamoFazer",
-                email: process.env.EMAIL_FROM
+                name: projectName,
+                email: projectEmail
             },
             to: [{ email }],
-            subject: "Código de Verificação - VamoFazer",
+            subject: `Código de Verificação - ${projectName}`,
             htmlContent: `
                 <div style="background: #050505; color: white; padding: 40px; font-family: sans-serif; border-radius: 24px; border: 1px solid #27272a; max-width: 600px; margin: auto;">
                     <div style="margin-bottom: 30px; text-align: center;">
-                        <h1 style="color: #3b82f6; margin: 0; font-size: 24px;">VamoFazer</h1>
+                        <h1 style="color: #3b82f6; margin: 0; font-size: 24px;">${projectName}</h1>
                     </div>
                     <h2 style="color: white; text-align: center;">Verificação de Conta</h2>
                     <p style="color: #a1a1aa; font-size: 16px; line-height: 1.5; text-align: center;">
-                        Parabéns por se cadastrar no VamoFazer! Use o código abaixo para confirmar seu e-mail e ativar sua conta.
+                        Parabéns por se cadastrar no <strong>${projectName}</strong>! Use o código abaixo para confirmar seu e-mail e ativar sua conta.
                     </p>
                     <div style="text-align: center; margin: 40px 0;">
                         <div style="background: #18181b; color: #3b82f6; padding: 24px; border-radius: 16px; font-weight: bold; font-size: 32px; display: inline-block; letter-spacing: 8px; border: 1px solid #27272a;">

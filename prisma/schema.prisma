@@ -40,6 +40,7 @@ model Project {
   logoUrl       String?
   coverUrl      String?
   backgroundUrl String?
+  logoHorizontalUrl String?
   link          String?
   email         String?
   createdAt     DateTime @default(now())

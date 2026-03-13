@@ -23,8 +23,9 @@ export async function GET(request: Request) {
         path: '/',
     });
 
-    // Inicia o fluxo OAuth do Google. O redirectTo não precisa mais do sessionId na URL
+    // Inicia o fluxo OAuth do Google. 
+    // Passamos o sessionId também na query do redirectTo como redundância ao cookie.
     await signIn("google", {
-        redirectTo: `/mobile-auth-callback`,
+        redirectTo: `/mobile-auth-callback?sessionId=${encodeURIComponent(sessionId)}`,
     });
 }

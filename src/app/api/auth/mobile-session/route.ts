@@ -23,6 +23,11 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: "session_expired" }, { status: 410 });
     }
 
+    if (mobileSession.error) {
+        await prisma.mobileAuthSession.delete({ where: { sessionId } });
+        return NextResponse.json({ error: mobileSession.error }, { status: 400 });
+    }
+
     // Sessão encontrada: retorna e exclui para segurança (one-time use)
     await prisma.mobileAuthSession.delete({ where: { sessionId } });
 

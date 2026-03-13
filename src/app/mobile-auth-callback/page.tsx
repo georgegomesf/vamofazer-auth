@@ -3,10 +3,11 @@ import prisma from "@/lib/prisma";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 
-export default async function MobileAuthCallbackPage() {
-    // Lê o sessionId do cookie que foi salvo antes do OAuth iniciar
+export default async function MobileAuthCallbackPage({ searchParams }: { searchParams: Promise<{ sessionId?: string }> }) {
+    // Lê o sessionId do cookie ou da query string (fallback para quando o browser se destrói)
     const cookieStore = await cookies();
-    const sessionId = cookieStore.get('mobile_session_id')?.value;
+    const resolvedParams = await searchParams;
+    const sessionId = resolvedParams.sessionId || cookieStore.get('mobile_session_id')?.value;
 
     if (!sessionId) {
         return (
@@ -20,6 +21,13 @@ export default async function MobileAuthCallbackPage() {
     const session = await auth();
 
     if (!session?.user) {
+        // Registra o erro para o mobile saber que falhou
+        await prisma.mobileAuthSession.upsert({
+            where: { sessionId },
+            create: { sessionId, error: "auth_not_concluded", expires: new Date(Date.now() + 2 * 60 * 1000) },
+            update: { error: "auth_not_concluded", expires: new Date(Date.now() + 2 * 60 * 1000) }
+        });
+
         return (
             <div style={styles.container}>
                 <h2 style={styles.error}>Autenticação não concluída.</h2>

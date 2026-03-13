@@ -105,6 +105,7 @@ model MobileAuthSession {
   sessionId String   @unique
   token     String?
   userData  String?
+  error     String?
   expires   DateTime
   createdAt DateTime @default(now())
 }

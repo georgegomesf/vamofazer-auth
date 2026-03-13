@@ -81,44 +81,57 @@ export default async function MobileAuthCallbackPage({ searchParams }: { searchP
         return (
             <div style={styles.container}>
                 {/* Fallback de redirecionamento imediato via Meta Tag */}
-                <meta httpEquiv="refresh" content={`1;url=${redirectUrl}`} />
+                <meta httpEquiv="refresh" content={`2;url=${redirectUrl}`} />
 
-                <svg style={styles.icon} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="12" cy="12" r="12" fill="#22c55e" />
-                    <path d="M7 12.5l3.5 3.5 6.5-7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <h2 style={styles.title}>Autenticação concluída!</h2>
-                <p style={styles.sub}>Você já pode retornar ao aplicativo.</p>
+                <div style={styles.card}>
+                    <div style={styles.successCircle}>
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
 
-                <button
-                    id="close-button"
-                    style={styles.button}
-                >
-                    Voltar para o App
-                </button>
+                    <h2 style={styles.title}>Sucesso!</h2>
+                    <p style={styles.sub}>
+                        Autenticação realizada com sucesso. <br />
+                        Estamos redirecionando você de volta...
+                    </p>
+
+                    <div style={styles.divider}></div>
+
+                    <a
+                        href={redirectUrl}
+                        style={styles.button}
+                        id="redirect-link"
+                    >
+                        Continuar no Aplicativo
+                    </a>
+
+                    <p style={styles.footer}>
+                        Se não for redirecionado em instantes, clique no botão acima.
+                    </p>
+                </div>
 
                 <script
                     dangerouslySetInnerHTML={{
                         __html: `
-                            const btn = document.getElementById('close-button');
+                            const link = document.getElementById('redirect-link');
                             const redirectUrl = "${redirectUrl}";
                             
-                            function forceClose() {
-                                window.close();
-                                window.open('', '_self', '');
-                                window.close();
+                            function tryRedirect() {
+                                // Tenta abrir o app. Em muitos sistemas, isso fecha o browser ou troca o foco.
                                 window.location.href = redirectUrl;
+                                
+                                // Tenta fechar a aba se for possível
+                                setTimeout(() => {
+                                    window.close();
+                                }, 1000);
                             }
 
-                            // Handler para o botão
-                            if (btn) {
-                                btn.addEventListener('click', forceClose);
-                            }
-
-                            // Tentativa automática
-                            forceClose();
-                            setTimeout(forceClose, 1000);
-                            setTimeout(forceClose, 3000);
+                            // Tenta imediatamente e após pequenos delays
+                            tryRedirect();
+                            setTimeout(tryRedirect, 1000);
+                            setTimeout(tryRedirect, 3000);
+                            setTimeout(tryRedirect, 5000);
                         `
                     }}
                 />
@@ -147,30 +160,73 @@ const styles: Record<string, React.CSSProperties> = {
         alignItems: "center",
         justifyContent: "center",
         minHeight: "100vh",
-        fontFamily: "sans-serif",
-        backgroundColor: "#fafafa",
         padding: "20px",
-        textAlign: "center",
+        backgroundColor: "#050505",
+        fontFamily: "Inter, system-ui, sans-serif",
     },
-    icon: {
-        width: 64,
-        height: 64,
-        marginBottom: 20,
+    card: {
+        width: "100%",
+        maxWidth: "400px",
+        backgroundColor: "#111",
+        borderRadius: "24px",
+        padding: "40px 24px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        border: "1px solid #222",
+        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+    },
+    successCircle: {
+        width: "80px",
+        height: "80px",
+        borderRadius: "40px",
+        backgroundColor: "#22c55e",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: "24px",
     },
     title: {
-        fontSize: 24,
+        fontSize: "24px",
         fontWeight: "bold",
-        color: "#111",
-        marginBottom: 8,
+        color: "#fff",
+        margin: "0 0 12px 0",
+    },
+    sub: {
+        fontSize: "16px",
+        color: "#a1a1aa",
+        margin: "0",
+        lineHeight: "1.5",
+        textAlign: "center",
+    },
+    divider: {
+        width: "100%",
+        height: "1px",
+        backgroundColor: "#222",
+        margin: "32px 0",
+    },
+    button: {
+        width: "100%",
+        backgroundColor: "#fff",
+        color: "#000",
+        padding: "16px",
+        borderRadius: "12px",
+        fontWeight: "bold",
+        fontSize: "16px",
+        textDecoration: "none",
+        textAlign: "center",
+        transition: "opacity 0.2s",
+    },
+    footer: {
+        fontSize: "12px",
+        color: "#52525b",
+        marginTop: "16px",
+        margin: "16px 0 0 0",
     },
     error: {
         fontSize: 20,
         fontWeight: "bold",
-        color: "#dc2626",
+        color: "#ef4444",
         marginBottom: 8,
-    },
-    sub: {
-        fontSize: 16,
-        color: "#555",
     },
 };

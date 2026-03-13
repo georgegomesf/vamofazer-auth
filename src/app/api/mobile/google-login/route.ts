@@ -23,6 +23,16 @@ export async function GET(request: Request) {
         path: '/',
     });
 
+    // Limpa a sessão anterior do navegador para garantir um novo login limpo
+    cookieStore.set('authjs.session-token', '', {
+        maxAge: 0,
+        path: '/',
+    });
+    cookieStore.set('__Secure-authjs.session-token', '', {
+        maxAge: 0,
+        path: '/',
+    });
+
     // Inicia o fluxo OAuth do Google. 
     // Passamos o sessionId também na query do redirectTo como redundância ao cookie.
     // O prompt: "select_account" força o Google a mostrar o seletor de contas, 

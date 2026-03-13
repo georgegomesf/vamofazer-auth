@@ -1,7 +1,17 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
-export async function POST() {
+export async function POST(request: Request) {
+    return handleLogout(request);
+}
+
+export async function GET(request: Request) {
+    return handleLogout(request);
+}
+
+async function handleLogout(request: Request) {
+    const { searchParams } = new URL(request.url);
+    const redirectUri = searchParams.get('redirectUri');
     const cookieStore = await cookies();
 
     // Lista de cookies comuns do NextAuth que devem ser limpos
@@ -23,6 +33,10 @@ export async function POST() {
             sameSite: "lax"
         });
     });
+
+    if (redirectUri && (redirectUri.startsWith('mob://') || redirectUri.startsWith('vamofazer://'))) {
+        return NextResponse.redirect(redirectUri);
+    }
 
     return NextResponse.json({ success: true });
 }

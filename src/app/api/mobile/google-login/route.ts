@@ -25,7 +25,11 @@ export async function GET(request: Request) {
 
     // Inicia o fluxo OAuth do Google. 
     // Passamos o sessionId também na query do redirectTo como redundância ao cookie.
+    // O prompt: "select_account" força o Google a mostrar o seletor de contas, 
+    // evitando que o app use uma sessão errada salva no browser do celular.
     await signIn("google", {
         redirectTo: `/mobile-auth-callback?sessionId=${encodeURIComponent(sessionId)}`,
+        // @ts-ignore
+        authorization: { params: { prompt: "select_account" } }
     });
 }

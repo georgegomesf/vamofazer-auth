@@ -32,6 +32,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  projects       UserProject[]
   activities     UserActivity[]
   createdActivities Activity[]
 }
@@ -49,6 +50,7 @@ model Project {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  users      UserProject[]
   activities Activity[]
 }
 
@@ -98,6 +100,17 @@ model PasswordResetToken {
   expires DateTime
 
   @@unique([email, token])
+}
+
+model UserProject {
+  userId    String
+  projectId String
+  role      String? // e.g., 'manager', 'member'
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@id([userId, projectId])
 }
 
 model MobileAuthSession {

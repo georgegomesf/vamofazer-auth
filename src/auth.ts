@@ -179,11 +179,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                             }
                         });
 
-                        // Atualiza o objeto do usuário na memória para a sessão atual
-                        // @ts-ignore
-                        user.role = "USER";
-                        // @ts-ignore
-                        if (!user.emailVerified) user.emailVerified = new Date();
+                        // Garante que o usuário logado via Google/Email também tenha um projeto
+                        if (user.id) {
+                            const hasProject = await prisma.userProject.findFirst({
+                                where: { userId: user.id }
+                            });
+                            if (!hasProject) {
+                                const firstProject = await prisma.project.findFirst();
+                                if (firstProject) {
+                                    await prisma.userProject.create({
+                                        data: {
+                                            userId: user.id,
+                                            projectId: firstProject.id,
+                                            role: 'member'
+                                        }
+                                    });
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -225,13 +238,38 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             // Apenas promove o usuário a USER, mas NÃO marca emailVerified aqui.
             // O emailVerified será preenchido pelo callback signIn somente após o clique no link.
             if (user.id && user.email) {
-                await prisma.user.update({
-                    where: { id: user.id },
-                    data: {
-                        role: "USER"
+                try {
+                    await prisma.user.update({
+                        where: { id: user.id },
+                        data: {
+                            role: "USER"
+                        }
+                    });
+
+                    // Garante que o usuário faça parte de ao menos um projeto (Regra: Todo usuário deve fazer parte de um projeto)
+                    const firstProject = await prisma.project.findFirst();
+                    if (firstProject) {
+                        await prisma.userProject.upsert({
+                            where: {
+                                userId_projectId: {
+                                    userId: user.id,
+                                    projectId: firstProject.id
+                                }
+                            },
+                            create: {
+                                userId: user.id,
+                                projectId: firstProject.id,
+                                role: 'member'
+                            },
+                            update: {} // Já existe, não faz nada
+                        });
+                        console.log(`Usuário ${user.email} associado ao projeto ${firstProject.name}`);
                     }
-                });
-                console.log("Novo usuário criado e promovido a USER (aguardando confirmação):", user.email);
+
+                    console.log("Novo usuário criado e promovido a USER (aguardando confirmação):", user.email);
+                } catch (error) {
+                    console.error("Erro ao configurar novo usuário:", error);
+                }
             }
         }
     },

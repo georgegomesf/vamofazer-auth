@@ -229,7 +229,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             if (url.startsWith("http://") || url.startsWith("https://")) {
                 try {
                     const parsedUrl = new URL(url);
-                    const isAllowed = allowedDomains.some(domain => parsedUrl.hostname.endsWith(domain) || parsedUrl.hostname === domain);
+                    const isAllowed = allowedDomains.some(domain => {
+                        const hostname = parsedUrl.hostname.toLowerCase();
+                        const target = domain.toLowerCase();
+                        return hostname === target || hostname.endsWith(`.${target}`);
+                    });
+                    
                     if (isAllowed) {
                         console.log(`AUTH SERVICE: Redirecting to ${url}`);
                         return url;
@@ -320,7 +325,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                                 userId: user.id,
                                 projectId: projectToJoin.id,
                                 role: 'member'
-                            },
+                              },
                             update: {}
                         });
                         console.log(`Usuário ${user.email} associado ao projeto ${projectToJoin.name}`);
@@ -349,6 +354,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     pages: {
         signIn: "/auth/signin",
+        error: "/auth/signin", // Redireciona erros para a tela de login
     },
 });
 

@@ -210,7 +210,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         },
         async redirect({ url, baseUrl }) {
             // Allow redirects to our domains and localhost for development
-            const allowedDomains = ["localhost", "vamofazer.com.br", "redefilosofica.com.br"];
+            const envDomains = process.env.ALLOWED_DOMAINS ? process.env.ALLOWED_DOMAINS.split(",").map(d => d.trim()) : [];
+            const allowedDomains = ["localhost", ...envDomains];
             if (url.startsWith("http://") || url.startsWith("https://")) {
                 try {
                     const parsedUrl = new URL(url);

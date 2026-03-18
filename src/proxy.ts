@@ -20,7 +20,8 @@ export default auth(async (req) => {
                     const url = new URL(callbackUrl, nextUrl.origin);
 
                     // Validate redirect to prevent Open Redirect attacks!
-                    const allowedDomains = ["localhost", "vamofazer.com.br", "redefilosofica.com.br"];
+                    const envDomains = process.env.ALLOWED_DOMAINS ? process.env.ALLOWED_DOMAINS.split(",").map(d => d.trim()) : [];
+                    const allowedDomains = ["localhost", ...envDomains];
                     const isAllowed = allowedDomains.some(domain => url.hostname.endsWith(domain) || url.hostname === domain);
 
                     if (!isAllowed) {

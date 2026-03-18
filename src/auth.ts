@@ -91,14 +91,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                             const cbUrl = new URL(parsedUrl);
                             hostToUse = cbUrl.host;
                             const projectId = cbUrl.searchParams.get("projectId");
-                            if (projectId) {
-                                // @ts-ignore
-                                const project = await prisma.project.findFirst({ where: { id: projectId } });
-                                if (project) {
-                                    projectName = project.name;
-                                    if (project.email) projectEmail = project.email;
-                                    displayHost = hostToUse;
+                            
+                            // Tenta encontrar o projeto pelo ID ou pelo Domínio (hostToUse)
+                            const project = await prisma.project.findFirst({
+                                where: {
+                                    OR: [
+                                        ...(projectId ? [{ id: projectId }] : []),
+                                        { link: { contains: hostToUse } }
+                                    ]
                                 }
+                            });
+                            
+                            if (project) {
+                                projectName = project.name;
+                                if (project.email) projectEmail = project.email;
+                                displayHost = hostToUse;
                             }
                         }
 
@@ -211,7 +218,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         async redirect({ url, baseUrl }) {
             // Allow redirects to our domains and localhost for development
             const envDomains = process.env.ALLOWED_DOMAINS ? process.env.ALLOWED_DOMAINS.split(",").map(d => d.trim()) : [];
-            const allowedDomains = ["localhost", ...envDomains];
+            const allowedDomains = ["localhost", "vamofazer.com.br", "redefilosofica.com.br", "levinasbrasil.com.br", "ge-sartre.com.br", ...envDomains];
             if (url.startsWith("http://") || url.startsWith("https://")) {
                 try {
                     const parsedUrl = new URL(url);

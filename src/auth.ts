@@ -33,9 +33,9 @@ async function getOriginProjectId() {
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
     trustHost: true,
+    debug: true,
     secret: process.env.AUTH_SECRET,
     adapter: PrismaAdapter(prisma),
-    basePath: "/api/auth",
     providers: [
         Google({
             clientId: process.env.GOOGLE_CLIENT_ID,

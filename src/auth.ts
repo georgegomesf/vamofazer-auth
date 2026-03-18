@@ -36,6 +36,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     debug: true,
     secret: process.env.AUTH_SECRET,
     adapter: PrismaAdapter(prisma),
+    basePath: "/api/auth",
     providers: [
         Google({
             clientId: process.env.GOOGLE_CLIENT_ID,
@@ -289,7 +290,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                                     create: {
                                         userId: user.id,
                                         projectId: projectToJoin.id,
-                                        role: 'member'
+                                        role: projectToJoin.defaultEntryRole || 'visitor'
                                     },
                                     update: {}
                                 });
@@ -324,7 +325,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                             create: {
                                 userId: user.id,
                                 projectId: projectToJoin.id,
-                                role: 'member'
+                                role: projectToJoin.defaultEntryRole || 'visitor'
                               },
                             update: {}
                         });

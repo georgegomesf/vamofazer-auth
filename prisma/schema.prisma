@@ -43,6 +43,7 @@ model Project {
   logoHorizontalUrl String?
   link          String?
   email         String?
+  defaultEntryRole String @default("visitor")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

@@ -42,7 +42,7 @@ export async function POST(request: Request) {
                     data: {
                         userId: user.id,
                         projectId: projectToJoin.id,
-                        role: 'member'
+                        role: projectToJoin.defaultEntryRole || 'visitor'
                     }
                 });
             }

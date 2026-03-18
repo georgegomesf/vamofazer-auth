@@ -76,8 +76,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 if (callbackUrl) {
                     try {
                         let hostToUse = "";
-                        if (callbackUrl.startsWith("http")) {
-                            const cbUrl = new URL(callbackUrl);
+                        let parsedUrl = callbackUrl;
+
+                        if (parsedUrl.includes("callbackUrl=")) {
+                            const dummyBase = "http://localhost";
+                            const tempUrl = new URL(parsedUrl.startsWith("/") ? dummyBase + parsedUrl : parsedUrl);
+                            const nestedCallback = tempUrl.searchParams.get("callbackUrl");
+                            if (nestedCallback) {
+                                parsedUrl = nestedCallback;
+                            }
+                        }
+
+                        if (parsedUrl.startsWith("http")) {
+                            const cbUrl = new URL(parsedUrl);
                             hostToUse = cbUrl.host;
                             const projectId = cbUrl.searchParams.get("projectId");
                             if (projectId) {

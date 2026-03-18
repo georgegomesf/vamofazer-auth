@@ -8,7 +8,7 @@ import { sendVerificationCodeEmail } from "@/lib/mail";
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { name, email: rawEmail, password, projectId } = body;
+        const { name, email: rawEmail, password, projectId, callbackUrl, environment } = body;
         const email = rawEmail?.toLowerCase().trim();
 
         if (!email || !password) {
@@ -48,6 +48,39 @@ export async function POST(request: Request) {
             }
         }
 
+
+        if (environment === 'web') {
+            const { signIn } = await import("@/auth");
+            
+            let enrichedCallback = callbackUrl || "/";
+            if (projectId) {
+                enrichedCallback = enrichedCallback.includes("?") 
+                    ? `${enrichedCallback}&projectId=${projectId}`
+                    : `${enrichedCallback}?projectId=${projectId}`;
+            }
+            
+            const finalCallbackUrl = `/auth/signin?callbackUrl=${encodeURIComponent(enrichedCallback)}`;
+            
+            try {
+                await signIn("email", {
+                    email,
+                    callbackUrl: finalCallbackUrl,
+                    redirect: false
+                });
+            } catch (error) {
+                // Ignora erro de redirect do Next.js se houver
+            }
+
+            return NextResponse.json({
+                success: "Conta criada! Verifique seu e-mail para confirmar seu cadastro.",
+                user: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role
+                }
+            });
+        }
 
         // Gera e envia o código de verificação
         const verificationToken = await generateVerificationCode(email);

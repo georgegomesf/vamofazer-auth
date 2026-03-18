@@ -35,6 +35,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     trustHost: true,
     secret: process.env.AUTH_SECRET,
     adapter: PrismaAdapter(prisma),
+    basePath: "/api/auth",
     providers: [
         Google({
             clientId: process.env.GOOGLE_CLIENT_ID,
@@ -55,13 +56,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             server: {}, // Dummy to satisfy NextAuth initialization, our custom sendVerificationRequest uses fetch
             from: process.env.EMAIL_FROM,
             async sendVerificationRequest({ identifier: email, url, provider }) {
-                console.log("============== NEXTAUTH MAGIC LINK ==============");
-                console.log(url);
-                console.log("=================================================");
-                try {
-                    require("fs").writeFileSync("/tmp/test-magic-link.txt", url);
-                } catch (e) { }
-
                 const verificationUrl = new URL(url);
                 const callbackUrl = verificationUrl.searchParams.get("callbackUrl");
                 const { host } = new URL(url);
@@ -75,7 +69,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 const defaultProjectId = process.env.NEXT_PUBLIC_PROJECT_ID;
                 if (defaultProjectId) {
                     const defaultProject = await prisma.project.findUnique({ where: { id: defaultProjectId } });
-                    console.log("Default Project:", defaultProject);
                     if (defaultProject) {
                         projectName = defaultProject.name;
                         if (defaultProject.email) projectEmail = defaultProject.email;
@@ -116,8 +109,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                             }
                         });
 
-                        console.log(project)
-
                         if (project) {
                             projectName = project.name;
                             if (project.email) projectEmail = project.email;
@@ -128,10 +119,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
                     } catch (e) { }
                 }
-
-                try {
-                    require("fs").appendFileSync("/tmp/auth-debug.log", `PROJECT_FOUND: ${projectName} (ID: ${displayProjectId}) for host ${displayHost}\n`);
-                } catch (e) { }
 
                 const res = await fetch(process.env.BREVO_API_URL!, {
                     method: 'POST',

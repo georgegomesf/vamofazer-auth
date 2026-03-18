@@ -53,6 +53,16 @@ export async function POST(request: Request) {
             const { signIn } = await import("@/auth");
             
             let enrichedCallback = callbackUrl || "/";
+            
+            if (enrichedCallback.startsWith("/") && projectId) {
+                const projectForLink = await prisma.project.findUnique({ where: { id: projectId } });
+                if (projectForLink && projectForLink.link) {
+                    const linkHost = projectForLink.link.startsWith("http") ? projectForLink.link : `https://${projectForLink.link}`;
+                    const cleanedHost = linkHost.endsWith("/") ? linkHost.slice(0, -1) : linkHost;
+                    enrichedCallback = `${cleanedHost}${enrichedCallback}`;
+                }
+            }
+
             if (projectId) {
                 enrichedCallback = enrichedCallback.includes("?") 
                     ? `${enrichedCallback}&projectId=${projectId}`

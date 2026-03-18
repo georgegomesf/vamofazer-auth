@@ -87,26 +87,29 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                             }
                         }
 
+                        let cbUrl;
                         if (parsedUrl.startsWith("http")) {
-                            const cbUrl = new URL(parsedUrl);
+                            cbUrl = new URL(parsedUrl);
                             hostToUse = cbUrl.host;
-                            const projectId = cbUrl.searchParams.get("projectId");
-                            
-                            // Tenta encontrar o projeto pelo ID ou pelo Domínio (hostToUse)
-                            const project = await prisma.project.findFirst({
-                                where: {
-                                    OR: [
-                                        ...(projectId ? [{ id: projectId }] : []),
-                                        { link: { contains: hostToUse } }
-                                    ]
-                                }
-                            });
-                            
-                            if (project) {
-                                projectName = project.name;
-                                if (project.email) projectEmail = project.email;
-                                displayHost = hostToUse;
+                        } else {
+                            cbUrl = new URL(parsedUrl, "http://localhost");
+                        }
+                        const projectId = cbUrl.searchParams.get("projectId");
+                        
+                        // Tenta encontrar o projeto pelo ID ou pelo Domínio (hostToUse)
+                        const project = await prisma.project.findFirst({
+                            where: {
+                                OR: [
+                                    ...(projectId ? [{ id: projectId }] : []),
+                                    ...(hostToUse ? [{ link: { contains: hostToUse } }] : [])
+                                ]
                             }
+                        });
+                        
+                        if (project) {
+                            projectName = project.name;
+                            if (project.email) projectEmail = project.email;
+                            if (hostToUse) displayHost = hostToUse;
                         }
 
 

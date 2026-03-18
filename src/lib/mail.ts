@@ -199,7 +199,9 @@ export const sendVerificationCodeEmail = async (email: string, code: string, pro
     });
 
     if (!res.ok) {
-        return { error: "Erro ao enviar e-mail" };
+        const errorData = await res.json().catch(() => ({}));
+        console.error("Brevo API error:", res.status, errorData);
+        return { error: `Erro ao enviar e-mail: ${res.status}` };
     }
 
     return { success: true };

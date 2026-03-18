@@ -36,7 +36,12 @@ export async function POST(request: Request) {
 
         // Gera e envia o código de verificação
         const verificationToken = await generateVerificationCode(email);
-        await sendVerificationCodeEmail(verificationToken.identifier, verificationToken.token);
+        const emailResult = await sendVerificationCodeEmail(verificationToken.identifier, verificationToken.token);
+
+        if (emailResult.error) {
+            console.error("Failed to send verification email:", emailResult.error);
+            return NextResponse.json({ error: "Conta criada, mas erro ao enviar e-mail de verificação." }, { status: 500 });
+        }
 
         return NextResponse.json({
             success: "Conta criada! Verifique seu e-mail para o código de ativação.",

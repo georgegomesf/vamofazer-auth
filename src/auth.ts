@@ -210,10 +210,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         },
         async redirect({ url, baseUrl }) {
             // Allow redirects to our domains and localhost for development
-            const allowedDomains = ["localhost", "vamofazer.com.br", ".br", ".com"]; // Standard whitelist
+            const allowedDomains = ["localhost", "vamofazer.com.br", "redefilosofica.com.br"];
             if (url.startsWith("http://") || url.startsWith("https://")) {
-                console.log(`AUTH SERVICE: Redirecting to ${url}`);
-                return url;
+                try {
+                    const parsedUrl = new URL(url);
+                    const isAllowed = allowedDomains.some(domain => parsedUrl.hostname.endsWith(domain) || parsedUrl.hostname === domain);
+                    if (isAllowed) {
+                        console.log(`AUTH SERVICE: Redirecting to ${url}`);
+                        return url;
+                    }
+                } catch (e) {
+                    // Invalid URL
+                }
+                
+                console.log(`AUTH SERVICE: Blocked redirect to external domain: ${url}`);
+                return baseUrl;
             }
             if (url.startsWith("/")) return `${baseUrl}${url}`;
             return baseUrl;

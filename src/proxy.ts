@@ -19,6 +19,15 @@ export default auth(async (req) => {
                     // Se o callbackUrl for relativo, usamos o host atual como base
                     const url = new URL(callbackUrl, nextUrl.origin);
 
+                    // Validate redirect to prevent Open Redirect attacks!
+                    const allowedDomains = ["localhost", "vamofazer.com.br", "redefilosofica.com.br"];
+                    const isAllowed = allowedDomains.some(domain => url.hostname.endsWith(domain) || url.hostname === domain);
+
+                    if (!isAllowed) {
+                        console.error(`AUTH PROXY: Blocked redirect to external domain: ${url.toString()}`);
+                        throw new Error("Invalid domain");
+                    }
+
                     // Se o domínio de destino for diferente do atual, enviamos um token de transferência
                     const currentHost = req.headers.get("host") || "";
                     const targetHost = url.host;

@@ -162,10 +162,20 @@ export const sendGoogleAuthWarningEmail = async (email: string, project?: { name
 export const sendVerificationCodeEmail = async (email: string, code: string, project?: { name: string, email?: string | null }) => {
     const { name: projectName, email: projectEmail } = await getProjectData(project);
 
-    const res = await fetch(process.env.BREVO_API_URL!, {
+    const apiKey = process.env.BREVO_API_KEY;
+    const apiUrl = process.env.BREVO_API_URL || 'https://api.brevo.com/v3/smtp/email';
+
+    if (!apiKey) {
+        console.error("BREVO_API_KEY is missing!");
+        return { error: "Configuração de e-mail ausente no servidor" };
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const res = await fetch(apiUrl, {
         method: 'POST',
         headers: {
-            'api-key': process.env.BREVO_API_KEY as string,
+            'api-key': apiKey,
             'content-type': 'application/json',
             'accept': 'application/json',
         },
@@ -174,7 +184,7 @@ export const sendVerificationCodeEmail = async (email: string, code: string, pro
                 name: projectName,
                 email: projectEmail
             },
-            to: [{ email }],
+            to: [{ email: normalizedEmail }],
             subject: `Código de Verificação - ${projectName}`,
             htmlContent: `
                 <div style="background: #050505; color: white; padding: 40px; font-family: sans-serif; border-radius: 24px; border: 1px solid #27272a; max-width: 600px; margin: auto;">

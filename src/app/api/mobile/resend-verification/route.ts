@@ -6,7 +6,8 @@ import { sendVerificationCodeEmail } from "@/lib/mail";
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { email } = body;
+        const { email: rawEmail } = body;
+        const email = rawEmail?.toLowerCase().trim();
 
         if (!email) {
             return NextResponse.json({ error: "E-mail é obrigatório" }, { status: 400 });

@@ -8,7 +8,8 @@ import { sendVerificationCodeEmail } from "@/lib/mail";
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { name, email, password } = body;
+        const { name, email: rawEmail, password } = body;
+        const email = rawEmail?.toLowerCase().trim();
 
         if (!email || !password) {
             return NextResponse.json({ error: "E-mail e senha são obrigatórios" }, { status: 400 });

@@ -26,7 +26,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 const { host } = new URL(url);
 
                 let displayHost = host;
-                let projectName = "VamoFazer";
+                let projectName = process.env.NEXT_PUBLIC_APP_NAME || "VamoFazer";
                 let projectEmail = process.env.EMAIL_FROM;
 
                 if (callbackUrl) {
@@ -44,31 +44,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                                     if (project.email) projectEmail = project.email;
                                     displayHost = hostToUse;
                                 }
-                            }
-                        }
-
-                        // Se ainda não encontrou o projeto ou o link era relativo
-                        if (projectName === "VamoFazer") {
-                            const headerList = await headers();
-                            const currentHost = headerList.get("host") || "";
-                            hostToUse = hostToUse || currentHost;
-
-                            // @ts-ignore
-                            const project = await prisma.project.findFirst({
-                                where: {
-                                    OR: [
-                                        { link: { contains: hostToUse } }
-                                    ]
-                                }
-                            });
-
-                            if (project) {
-                                projectName = project.name;
-                                if (project.email) projectEmail = project.email;
-                                displayHost = hostToUse;
-                            } else if (hostToUse.includes("localhost:3004")) {
-                                projectName = "Myrvia & George";
-                                displayHost = hostToUse;
                             }
                         }
                     } catch (e) { }

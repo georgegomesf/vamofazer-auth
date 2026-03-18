@@ -1,6 +1,6 @@
 export const sendPasswordResetEmail = async (email: string, token: string, project?: { name: string, email?: string | null }) => {
     const resetLink = `${process.env.NEXTAUTH_URL}/auth/new-password?token=${token}`;
-    const projectName = project?.name || "VamoFazer";
+    const projectName = project?.name || process.env.NEXT_PUBLIC_APP_NAME || "VamoFazer";
     const projectEmail = project?.email || process.env.EMAIL_FROM;
 
     const res = await fetch(process.env.BREVO_API_URL || 'https://api.brevo.com/v3/smtp/email', {
@@ -45,7 +45,7 @@ export const sendPasswordResetEmail = async (email: string, token: string, proje
 };
 
 export const sendPasswordResetCodeEmail = async (email: string, code: string, project?: { name: string, email?: string | null }) => {
-    const projectName = project?.name || "VamoFazer";
+    const projectName = project?.name || process.env.NEXT_PUBLIC_APP_NAME || "VamoFazer";
     const projectEmail = project?.email || process.env.EMAIL_FROM;
 
     const res = await fetch(process.env.BREVO_API_URL || 'https://api.brevo.com/v3/smtp/email', {
@@ -92,7 +92,7 @@ export const sendPasswordResetCodeEmail = async (email: string, code: string, pr
 };
 
 export const sendGoogleAuthWarningEmail = async (email: string, project?: { name: string, email?: string | null }) => {
-    const projectName = project?.name || "VamoFazer";
+    const projectName = project?.name || process.env.NEXT_PUBLIC_APP_NAME || "VamoFazer";
     const projectEmail = project?.email || process.env.EMAIL_FROM;
 
     const res = await fetch(process.env.BREVO_API_URL || 'https://api.brevo.com/v3/smtp/email', {
@@ -136,7 +136,7 @@ export const sendGoogleAuthWarningEmail = async (email: string, project?: { name
 };
 
 export const sendVerificationCodeEmail = async (email: string, code: string, project?: { name: string, email?: string | null }) => {
-    const projectName = project?.name || "VamoFazer";
+    const projectName = project?.name || process.env.NEXT_PUBLIC_APP_NAME || "VamoFazer";
     const projectEmail = project?.email || process.env.EMAIL_FROM;
 
     const res = await fetch(process.env.BREVO_API_URL || 'https://api.brevo.com/v3/smtp/email', {

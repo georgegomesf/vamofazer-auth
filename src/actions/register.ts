@@ -38,7 +38,7 @@ export async function registerUser(formData: FormData) {
 
     // Detecta o contexto do projeto para o e-mail
     let projectId = "";
-    let projectName = "VamoFazer";
+    let projectName = process.env.NEXT_PUBLIC_APP_NAME || "VamoFazer";
 
     try {
         let host = "";
@@ -58,8 +58,6 @@ export async function registerUser(formData: FormData) {
             if (project) {
                 projectId = project.id;
                 projectName = project.name;
-            } else if (host.includes("localhost:3004") || originalCallback.includes("localhost:3004")) {
-                projectName = "Myrvia & George";
             }
         }
     } catch (e) { }

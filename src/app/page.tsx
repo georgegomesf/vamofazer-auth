@@ -12,7 +12,7 @@ export default async function Home() {
         <div className="mb-12 animate-pulse">
           <Image
             src="/logo.png"
-            alt="VamoFazer Logo"
+            alt={`${process.env.NEXT_PUBLIC_APP_NAME || "VamoFazer"} Logo`}
             width={200}
             height={200}
             className="w-48 h-auto"
@@ -41,7 +41,7 @@ export default async function Home() {
             <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
               <Shield className="w-6 h-6 text-white" />
             </div>
-            <span className="text-xl font-bold">VamoFazer</span>
+            <span className="text-xl font-bold">{process.env.NEXT_PUBLIC_APP_NAME || "VamoFazer"}</span>
           </div>
 
           <form action={async () => {

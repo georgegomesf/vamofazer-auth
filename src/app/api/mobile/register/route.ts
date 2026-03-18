@@ -74,7 +74,7 @@ export async function POST(request: Request) {
             try {
                 await signIn("email", {
                     email,
-                    callbackUrl: finalCallbackUrl,
+                    redirectTo: finalCallbackUrl,
                     redirect: false
                 });
             } catch (error) {

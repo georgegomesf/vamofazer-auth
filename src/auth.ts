@@ -55,6 +55,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             server: {}, // Dummy to satisfy NextAuth initialization, our custom sendVerificationRequest uses fetch
             from: process.env.EMAIL_FROM,
             async sendVerificationRequest({ identifier: email, url, provider }) {
+                console.log("============== NEXTAUTH MAGIC LINK ==============");
+                console.log(url);
+                console.log("=================================================");
+                try {
+                    require("fs").writeFileSync("/tmp/test-magic-link.txt", url);
+                } catch (e) { }
+
                 const verificationUrl = new URL(url);
                 const callbackUrl = verificationUrl.searchParams.get("callbackUrl");
                 const { host } = new URL(url);
@@ -62,11 +69,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 let displayHost = host;
                 let projectName = "Autenticação"; // Default fallback
                 let projectEmail = process.env.EMAIL_FROM;
+                let displayProjectId = "default"; // For debugging
 
                 // Tenta carregar o projeto padrão do banco como base
                 const defaultProjectId = process.env.NEXT_PUBLIC_PROJECT_ID;
                 if (defaultProjectId) {
                     const defaultProject = await prisma.project.findUnique({ where: { id: defaultProjectId } });
+                    console.log("Default Project:", defaultProject);
                     if (defaultProject) {
                         projectName = defaultProject.name;
                         if (defaultProject.email) projectEmail = defaultProject.email;
@@ -95,7 +104,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                             cbUrl = new URL(parsedUrl, "http://localhost");
                         }
                         const projectId = cbUrl.searchParams.get("projectId");
-                        
+                        if (projectId) displayProjectId = projectId;
+
                         // Tenta encontrar o projeto pelo ID ou pelo Domínio (hostToUse)
                         const project = await prisma.project.findFirst({
                             where: {
@@ -105,16 +115,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                                 ]
                             }
                         });
-                        
+
+                        console.log(project)
+
                         if (project) {
                             projectName = project.name;
                             if (project.email) projectEmail = project.email;
+                            if (projectId) displayProjectId = projectId; else displayProjectId = project.id;
                             if (hostToUse) displayHost = hostToUse;
                         }
 
 
                     } catch (e) { }
                 }
+
+                try {
+                    require("fs").appendFileSync("/tmp/auth-debug.log", `PROJECT_FOUND: ${projectName} (ID: ${displayProjectId}) for host ${displayHost}\n`);
+                } catch (e) { }
 
                 const res = await fetch(process.env.BREVO_API_URL!, {
                     method: 'POST',
@@ -233,7 +250,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 } catch (e) {
                     // Invalid URL
                 }
-                
+
                 console.log(`AUTH SERVICE: Blocked redirect to external domain: ${url}`);
                 return baseUrl;
             }

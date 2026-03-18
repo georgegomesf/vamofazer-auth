@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { NextResponse } from "next/server";
 
 export default auth(async (req) => {
     const { nextUrl } = req;
@@ -6,6 +7,8 @@ export default auth(async (req) => {
 
     const isAuthRoute = nextUrl.pathname.startsWith("/auth");
     const isSignOutRoute = nextUrl.pathname.replace(/\/$/, "") === "/auth/signout";
+
+    let response: NextResponse | undefined;
 
     if (isAuthRoute && !isSignOutRoute) {
         if (isLoggedIn) {
@@ -58,17 +61,26 @@ export default auth(async (req) => {
                         }
                     }
 
-                    return Response.redirect(url.toString());
+                    response = NextResponse.redirect(url.toString());
                 } catch (e) {
                     console.error("AUTH PROXY: Invalid callbackUrl:", callbackUrl);
                 }
             }
-            return Response.redirect(new URL("/", nextUrl).toString());
+            if (!response) {
+                response = NextResponse.redirect(new URL("/", nextUrl).toString());
+            }
         }
-        return;
     }
 
-    return;
+    // Clean up our previous experimental cookie so it doesn't get stuck forever
+    if (req.cookies.has("origin_project_id")) {
+        if (!response) {
+            response = NextResponse.next();
+        }
+        response.cookies.delete("origin_project_id");
+    }
+
+    return response;
 });
 
 export const config = {

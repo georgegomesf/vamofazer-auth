@@ -42,7 +42,7 @@ export async function resetPassword(formData: FormData) {
 
     if (!existingUser.password) {
         // Usuário existe mas não tem senha (entrou via Google)
-        await sendGoogleAuthWarningEmail(email, project || undefined);
+        await sendGoogleAuthWarningEmail(email, project?.id || undefined);
         return { success: "Instruções de acesso enviadas para o seu e-mail!" };
     }
 
@@ -50,7 +50,7 @@ export async function resetPassword(formData: FormData) {
     await sendPasswordResetEmail(
         passwordResetToken.email,
         passwordResetToken.token,
-        project || undefined
+        project?.id || undefined
     );
 
     return { success: "Link de recuperação enviado para o seu e-mail!" };

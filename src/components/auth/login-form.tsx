@@ -1,7 +1,7 @@
 "use client";
 
 import { signIn } from "next-auth/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Mail, Lock, User, ShieldCheck, MailQuestion, Loader2 } from "lucide-react";
 import { GoogleIcon } from "@/components/icons";
 import Link from "next/link";
@@ -20,6 +20,8 @@ export default function LoginForm() {
     const emailSent = searchParams.get("email_sent") === "true";
     const verified = searchParams.get("verified") === "true";
     const registeredEmail = searchParams.get("email") || "";
+    const autoLogin = searchParams.get("autoLogin");
+    const projectId = searchParams.get("projectId");
 
     const [magicLinkSent, setMagicLinkSent] = useState(false);
 
@@ -27,9 +29,15 @@ export default function LoginForm() {
         setLoading(true);
         // Em vez de ir direto para o front, enviamos para uma rota protegida no @auth
         // que o middleware (proxy.ts) irá interceptar para anexar o token 'st'.
-        const transferUrl = `/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+        const transferUrl = `/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}${projectId ? `&projectId=${projectId}` : ""}`;
         await signIn("google", { callbackUrl: transferUrl });
     };
+
+    useEffect(() => {
+        if (autoLogin === "google" && !loading) {
+            handleGoogleLogin();
+        }
+    }, [autoLogin]);
 
     const handleCredentialsLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -78,7 +86,7 @@ export default function LoginForm() {
 
             // Usamos a rota de signin do @auth como ponte para o middleware interceptar
             // o clique no e-mail e anexar o token de transferência antes de ir para o front.
-            const transferUrl = `/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+            const transferUrl = `/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}${projectId ? `&projectId=${projectId}` : ""}`;
 
             const res = await signIn("email", {
                 email: userEmail,

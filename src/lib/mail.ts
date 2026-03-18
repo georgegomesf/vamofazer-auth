@@ -1,20 +1,13 @@
 import prisma from "./prisma";
 
-async function getProjectData(project?: { name: string, email?: string | null }) {
-    if (project?.name) {
-        return {
-            name: project.name,
-            email: project.email || process.env.EMAIL_FROM!
-        };
-    }
-
-    const defaultProjectId = process.env.NEXT_PUBLIC_PROJECT_ID;
-    if (defaultProjectId) {
-        const defaultProject = await prisma.project.findUnique({ where: { id: defaultProjectId } });
-        if (defaultProject) {
+async function getProjectData(projectId?: string | null) {
+    const targetProjectId = projectId || process.env.NEXT_PUBLIC_PROJECT_ID;
+    if (targetProjectId) {
+        const project = await prisma.project.findUnique({ where: { id: targetProjectId } });
+        if (project) {
             return {
-                name: defaultProject.name,
-                email: defaultProject.email || process.env.EMAIL_FROM!
+                name: project.name,
+                email: project.email || process.env.EMAIL_FROM!
             };
         }
     }
@@ -25,9 +18,9 @@ async function getProjectData(project?: { name: string, email?: string | null })
     };
 }
 
-export const sendPasswordResetEmail = async (email: string, token: string, project?: { name: string, email?: string | null }) => {
+export const sendPasswordResetEmail = async (email: string, token: string, projectId?: string | null) => {
     const resetLink = `${process.env.NEXT_AUTH_URL}/auth/new-password?token=${token}`;
-    const { name: projectName, email: projectEmail } = await getProjectData(project);
+    const { name: projectName, email: projectEmail } = await getProjectData(projectId);
 
     const res = await fetch(process.env.BREVO_API_URL!, {
         method: 'POST',
@@ -70,8 +63,8 @@ export const sendPasswordResetEmail = async (email: string, token: string, proje
     return { success: true };
 };
 
-export const sendPasswordResetCodeEmail = async (email: string, code: string, project?: { name: string, email?: string | null }) => {
-    const { name: projectName, email: projectEmail } = await getProjectData(project);
+export const sendPasswordResetCodeEmail = async (email: string, code: string, projectId?: string | null) => {
+    const { name: projectName, email: projectEmail } = await getProjectData(projectId);
 
     const res = await fetch(process.env.BREVO_API_URL!, {
         method: 'POST',
@@ -116,8 +109,8 @@ export const sendPasswordResetCodeEmail = async (email: string, code: string, pr
     return { success: true };
 };
 
-export const sendGoogleAuthWarningEmail = async (email: string, project?: { name: string, email?: string | null }) => {
-    const { name: projectName, email: projectEmail } = await getProjectData(project);
+export const sendGoogleAuthWarningEmail = async (email: string, projectId?: string | null) => {
+    const { name: projectName, email: projectEmail } = await getProjectData(projectId);
 
     const res = await fetch(process.env.BREVO_API_URL!, {
         method: 'POST',
@@ -159,8 +152,8 @@ export const sendGoogleAuthWarningEmail = async (email: string, project?: { name
     return { success: res.ok };
 };
 
-export const sendVerificationCodeEmail = async (email: string, code: string, project?: { name: string, email?: string | null }) => {
-    const { name: projectName, email: projectEmail } = await getProjectData(project);
+export const sendVerificationCodeEmail = async (email: string, code: string, projectId?: string | null) => {
+    const { name: projectName, email: projectEmail } = await getProjectData(projectId);
 
     const apiKey = process.env.BREVO_API_KEY;
     const apiUrl = process.env.BREVO_API_URL || 'https://api.brevo.com/v3/smtp/email';

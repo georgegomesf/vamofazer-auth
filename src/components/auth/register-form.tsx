@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Mail, Lock, User, ShieldPlus, Loader2 } from "lucide-react";
 import { GoogleIcon } from "@/components/icons";
 import Link from "next/link";
@@ -20,6 +20,7 @@ export default function RegisterForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const callbackUrl = searchParams.get("callbackUrl") || "/";
+    const autoLogin = searchParams.get("autoLogin");
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -53,6 +54,12 @@ export default function RegisterForm() {
         setLoading(true);
         await signIn("google", { callbackUrl });
     };
+
+    useEffect(() => {
+        if (autoLogin === "google" && !loading) {
+            handleGoogleRegister();
+        }
+    }, [autoLogin]);
 
     return (
         <div className="space-y-4">

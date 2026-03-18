@@ -7,7 +7,7 @@ import { UserRole } from "@prisma/client";
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { email: rawEmail } = body;
+        const { email: rawEmail, projectId } = body;
         const email = rawEmail?.toLowerCase().trim();
 
         if (!email) {
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
         }
 
         const verificationToken = await generateVerificationCode(email);
-        const emailResult = await sendVerificationCodeEmail(verificationToken.identifier, verificationToken.token);
+        const emailResult = await sendVerificationCodeEmail(verificationToken.identifier, verificationToken.token, projectId);
 
         if (emailResult.error) {
             console.error("Failed to send verification email:", emailResult.error);

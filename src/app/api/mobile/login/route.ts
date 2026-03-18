@@ -46,6 +46,26 @@ export async function POST(request: Request) {
             { expiresIn: "7d" }
         );
 
+        if (body.projectId) {
+            const hasProject = await prisma.userProject.findFirst({
+                where: { userId: user.id, projectId: body.projectId }
+            });
+
+            if (!hasProject) {
+                const projectToJoin = await prisma.project.findUnique({ where: { id: body.projectId } });
+                if (projectToJoin) {
+                    await prisma.userProject.create({
+                        data: {
+                            userId: user.id,
+                            projectId: projectToJoin.id,
+                            role: 'member'
+                        }
+                    });
+                }
+            }
+        }
+
+
         return NextResponse.json({
             success: "Login realizado com sucesso",
             token,

@@ -5,7 +5,31 @@ import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import Email from "next-auth/providers/email";
 import bcrypt from "bcryptjs";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
+
+async function getOriginProjectId() {
+    let projectId = process.env.NEXT_PUBLIC_PROJECT_ID;
+    try {
+        const cookieStore = await cookies();
+        const cbUrl = cookieStore.get("__Secure-authjs.callback-url")?.value || cookieStore.get("authjs.callback-url")?.value;
+        if (cbUrl) {
+            const tempUrl = cbUrl.startsWith("http") ? cbUrl : `http://localhost${cbUrl}`;
+            const urlObj = new URL(tempUrl);
+            const fromCookie = urlObj.searchParams.get("projectId");
+            if (fromCookie) {
+                projectId = fromCookie;
+            } else {
+                const destUrl = urlObj.searchParams.get("callbackUrl");
+                if (destUrl) {
+                    const destUrlObj = new URL(destUrl.startsWith("http") ? destUrl : `http://localhost${destUrl}`);
+                    const destProjectId = destUrlObj.searchParams.get("projectId");
+                    if (destProjectId) projectId = destProjectId;
+                }
+            }
+        }
+    } catch (e) { }
+    return projectId;
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
     trustHost: true,
@@ -207,7 +231,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                             where: { userId: user.id }
                         });
                         if (!hasProject) {
-                            const defaultProjectId = process.env.NEXT_PUBLIC_PROJECT_ID;
+                            const defaultProjectId = await getOriginProjectId();
                             const projectToJoin = defaultProjectId
                                 ? await prisma.project.findUnique({ where: { id: defaultProjectId } })
                                 : await prisma.project.findFirst();
@@ -242,7 +266,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     console.log("Novo usuário criado:", user.email);
 
                     // Garante que o usuário faça parte de ao menos um projeto
-                    const defaultProjectId = process.env.NEXT_PUBLIC_PROJECT_ID;
+                    const defaultProjectId = await getOriginProjectId();
                     const projectToJoin = defaultProjectId
                         ? await prisma.project.findUnique({ where: { id: defaultProjectId } })
                         : await prisma.project.findFirst();

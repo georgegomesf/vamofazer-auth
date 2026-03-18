@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { email } = body;
+        const { email, projectId } = body;
 
         if (!email) {
             return NextResponse.json({ error: "O e-mail é obrigatório" }, { status: 400 });
@@ -23,14 +23,15 @@ export async function POST(request: Request) {
 
         if (!existingUser.password) {
             // Usuário do Google
-            await sendGoogleAuthWarningEmail(email);
+            await sendGoogleAuthWarningEmail(email, projectId);
             return NextResponse.json({ success: "Instruções enviadas para o seu e-mail!" });
         }
 
         const passwordResetToken = await generatePasswordResetCode(email);
         await sendPasswordResetCodeEmail(
             passwordResetToken.email,
-            passwordResetToken.token
+            passwordResetToken.token,
+            projectId
         );
 
         return NextResponse.json({ success: "Código de recuperação enviado!" });

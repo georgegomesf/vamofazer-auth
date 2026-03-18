@@ -8,7 +8,7 @@ import { sendVerificationCodeEmail } from "@/lib/mail";
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { name, email: rawEmail, password } = body;
+        const { name, email: rawEmail, password, projectId } = body;
         const email = rawEmail?.toLowerCase().trim();
 
         if (!email || !password) {
@@ -35,9 +35,23 @@ export async function POST(request: Request) {
             },
         });
 
+        if (projectId) {
+            const projectToJoin = await prisma.project.findUnique({ where: { id: projectId } });
+            if (projectToJoin) {
+                await prisma.userProject.create({
+                    data: {
+                        userId: user.id,
+                        projectId: projectToJoin.id,
+                        role: 'member'
+                    }
+                });
+            }
+        }
+
+
         // Gera e envia o código de verificação
         const verificationToken = await generateVerificationCode(email);
-        const emailResult = await sendVerificationCodeEmail(verificationToken.identifier, verificationToken.token);
+        const emailResult = await sendVerificationCodeEmail(verificationToken.identifier, verificationToken.token, projectId);
 
         if (emailResult.error) {
             console.error("Failed to send verification email:", emailResult.error);

@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { generateVerificationCode } from "@/lib/tokens";
 import { sendVerificationCodeEmail } from "@/lib/mail";
+import { UserRole } from "@prisma/client";
 
 export async function POST(request: Request) {
     try {
@@ -13,14 +14,16 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "E-mail é obrigatório" }, { status: 400 });
         }
 
-        const user = await prisma.user.findUnique({
-            where: { email }
+        // Garante que o usuário existe (Upsert) - igual ao fluxo de Magic Link do web
+        const user = await prisma.user.upsert({
+            where: { email },
+            update: {}, // Não altera nada se já existir
+            create: {
+                email,
+                name: email.split('@')[0],
+                role: UserRole.VISITOR // Começa como visitante até verificar
+            }
         });
-
-        if (!user) {
-            // Por segurança, não informamos se o usuário existe
-            return NextResponse.json({ success: "Se este e-mail for válido, um novo código foi enviado." });
-        }
 
         if (user.emailVerified) {
             return NextResponse.json({ error: "E-mail já verificado" }, { status: 400 });

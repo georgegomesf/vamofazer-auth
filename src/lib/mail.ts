@@ -1,9 +1,35 @@
-export const sendPasswordResetEmail = async (email: string, token: string, project?: { name: string, email?: string | null }) => {
-    const resetLink = `${process.env.NEXTAUTH_URL}/auth/new-password?token=${token}`;
-    const projectName = project?.name || process.env.NEXT_PUBLIC_APP_NAME || "VamoFazer";
-    const projectEmail = project?.email || process.env.EMAIL_FROM;
+import prisma from "./prisma";
 
-    const res = await fetch(process.env.BREVO_API_URL || 'https://api.brevo.com/v3/smtp/email', {
+async function getProjectData(project?: { name: string, email?: string | null }) {
+    if (project?.name) {
+        return {
+            name: project.name,
+            email: project.email || process.env.EMAIL_FROM!
+        };
+    }
+
+    const defaultProjectId = process.env.NEXT_PUBLIC_PROJECT_ID;
+    if (defaultProjectId) {
+        const defaultProject = await prisma.project.findUnique({ where: { id: defaultProjectId } });
+        if (defaultProject) {
+            return {
+                name: defaultProject.name,
+                email: defaultProject.email || process.env.EMAIL_FROM!
+            };
+        }
+    }
+
+    return {
+        name: "Autenticação",
+        email: process.env.EMAIL_FROM!
+    };
+}
+
+export const sendPasswordResetEmail = async (email: string, token: string, project?: { name: string, email?: string | null }) => {
+    const resetLink = `${process.env.NEXT_AUTH_URL}/auth/new-password?token=${token}`;
+    const { name: projectName, email: projectEmail } = await getProjectData(project);
+
+    const res = await fetch(process.env.BREVO_API_URL!, {
         method: 'POST',
         headers: {
             'api-key': process.env.BREVO_API_KEY as string,
@@ -45,10 +71,9 @@ export const sendPasswordResetEmail = async (email: string, token: string, proje
 };
 
 export const sendPasswordResetCodeEmail = async (email: string, code: string, project?: { name: string, email?: string | null }) => {
-    const projectName = project?.name || process.env.NEXT_PUBLIC_APP_NAME || "VamoFazer";
-    const projectEmail = project?.email || process.env.EMAIL_FROM;
+    const { name: projectName, email: projectEmail } = await getProjectData(project);
 
-    const res = await fetch(process.env.BREVO_API_URL || 'https://api.brevo.com/v3/smtp/email', {
+    const res = await fetch(process.env.BREVO_API_URL!, {
         method: 'POST',
         headers: {
             'api-key': process.env.BREVO_API_KEY as string,
@@ -92,10 +117,9 @@ export const sendPasswordResetCodeEmail = async (email: string, code: string, pr
 };
 
 export const sendGoogleAuthWarningEmail = async (email: string, project?: { name: string, email?: string | null }) => {
-    const projectName = project?.name || process.env.NEXT_PUBLIC_APP_NAME || "VamoFazer";
-    const projectEmail = project?.email || process.env.EMAIL_FROM;
+    const { name: projectName, email: projectEmail } = await getProjectData(project);
 
-    const res = await fetch(process.env.BREVO_API_URL || 'https://api.brevo.com/v3/smtp/email', {
+    const res = await fetch(process.env.BREVO_API_URL!, {
         method: 'POST',
         headers: {
             'api-key': process.env.BREVO_API_KEY as string,
@@ -136,10 +160,9 @@ export const sendGoogleAuthWarningEmail = async (email: string, project?: { name
 };
 
 export const sendVerificationCodeEmail = async (email: string, code: string, project?: { name: string, email?: string | null }) => {
-    const projectName = project?.name || process.env.NEXT_PUBLIC_APP_NAME || "VamoFazer";
-    const projectEmail = project?.email || process.env.EMAIL_FROM;
+    const { name: projectName, email: projectEmail } = await getProjectData(project);
 
-    const res = await fetch(process.env.BREVO_API_URL || 'https://api.brevo.com/v3/smtp/email', {
+    const res = await fetch(process.env.BREVO_API_URL!, {
         method: 'POST',
         headers: {
             'api-key': process.env.BREVO_API_KEY as string,

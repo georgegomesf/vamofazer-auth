@@ -3,8 +3,17 @@ import { auth, signOut } from "@/auth";
 import { User, LogOut, Shield, Settings, ExternalLink, Smartphone } from "lucide-react";
 import Image from "next/image";
 
+import prisma from "@/lib/prisma";
+
 export default async function Home() {
   const session = await auth();
+
+  const defaultProjectId = process.env.NEXT_PUBLIC_PROJECT_ID;
+  let projectName = "Autenticação";
+  if (defaultProjectId) {
+    const project = await prisma.project.findUnique({ where: { id: defaultProjectId } });
+    if (project) projectName = project.name;
+  }
 
   if (!session) {
     return (
@@ -12,7 +21,7 @@ export default async function Home() {
         <div className="mb-12 animate-pulse">
           <Image
             src="/logo.png"
-            alt={`${process.env.NEXT_PUBLIC_APP_NAME || "VamoFazer"} Logo`}
+            alt={`${projectName} Logo`}
             width={200}
             height={200}
             className="w-48 h-auto"
@@ -41,7 +50,7 @@ export default async function Home() {
             <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
               <Shield className="w-6 h-6 text-white" />
             </div>
-            <span className="text-xl font-bold">{process.env.NEXT_PUBLIC_APP_NAME || "VamoFazer"}</span>
+            <span className="text-xl font-bold">{projectName}</span>
           </div>
 
           <form action={async () => {
@@ -68,7 +77,7 @@ export default async function Home() {
                   )}
                 </div>
               </div>
-              <h2 className="text-2xl font-bold mb-1">{session.user?.name || "Usuário"}</h2>
+              <h2 className="text-2xl font-bold mb-1">{session.user?.name || session.user?.email?.split('@')[0]}</h2>
               <p className="text-zinc-500 mb-6">{session.user?.email}</p>
 
               <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-500 text-xs font-bold uppercase tracking-wider">

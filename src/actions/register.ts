@@ -38,7 +38,17 @@ export async function registerUser(formData: FormData) {
 
     // Detecta o contexto do projeto para o e-mail
     let projectId = "";
-    let projectName = process.env.NEXT_PUBLIC_APP_NAME || "VamoFazer";
+    let projectName = "Autenticação";
+
+    // Tenta carregar o projeto padrão do banco como base
+    const defaultProjectId = process.env.NEXT_PUBLIC_PROJECT_ID;
+    if (defaultProjectId) {
+        const defaultProject = await prisma.project.findUnique({ where: { id: defaultProjectId } });
+        if (defaultProject) {
+            projectId = defaultProject.id;
+            projectName = defaultProject.name;
+        }
+    }
 
     try {
         let host = "";

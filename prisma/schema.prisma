@@ -26,15 +26,11 @@ model User {
   role          UserRole        @default(VISITOR)
   accounts      Account[]
   sessions      Session[]
-  // Optional for WebAuthn support
-  Authenticator Authenticator[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   projects       UserProject[]
-  activities     UserActivity[]
-  createdActivities Activity[]
 }
 
 model Project {
@@ -51,7 +47,6 @@ model Project {
   updatedAt     DateTime @updatedAt
 
   users      UserProject[]
-  activities Activity[]
 }
 
 model Account {
@@ -121,74 +116,4 @@ model MobileAuthSession {
   error     String?
   expires   DateTime
   createdAt DateTime @default(now())
-}
-
-// Optional for WebAuthn support
-model Authenticator {
-  credentialID         String  @unique
-  userId               String
-  providerAccountId    String
-  credentialPublicKey  String
-  counter              Int
-  credentialDeviceType String
-  credentialBackedUp   Boolean
-  transports           String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@id([userId, credentialID])
-}
-
-enum UserActivityRole {
-  OWNER
-  ORGANIZER
-  PARTICIPANT
-  GUEST
-  PENDING
-  BLOCKED
-  INVITED
-}
-
-enum ActivityType {
-  EVENT
-  TASK
-}
-
-model Activity {
-  id            String   @id @default(cuid())
-  name          String
-  description   String?
-  type          ActivityType @default(EVENT)
-  dataInicio    DateTime
-  dataFim       DateTime?
-  hideEndData   Boolean  @default(false)
-  projectId     String
-  createdBy     String
-  publishedAt   DateTime?
-  visible       Boolean  @default(true)
-  logoUrl       String?
-  coverUrl      String?
-  backgroundUrl String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  creator   User    @relation(fields: [createdBy], references: [id], onDelete: Cascade)
-  users     UserActivity[]
-}
-
-model UserActivity {
-  userId     String
-  activityId String
-  role       UserActivityRole @default(PARTICIPANT)
-  accessCode String?          @unique
-  isFavorite Boolean          @default(false)
-  checkedInAt DateTime?
-  lastMuralView DateTime?
-  createdAt  DateTime @default(now())
-
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
-
-  @@id([userId, activityId])
 }

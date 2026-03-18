@@ -16,6 +16,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             clientId: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
             allowDangerousEmailAccountLinking: true,
+            profile(profile) {
+                return {
+                    id: profile.sub,
+                    name: profile.name,
+                    email: profile.email,
+                    image: profile.picture,
+                    emailVerified: new Date(),
+                    role: "USER",
+                };
+            },
         }),
         Email({
             server: {}, // Dummy to satisfy NextAuth initialization, our custom sendVerificationRequest uses fetch
@@ -26,8 +36,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 const { host } = new URL(url);
 
                 let displayHost = host;
-                let projectName = process.env.NEXT_PUBLIC_APP_NAME || "VamoFazer";
+                let projectName = "Autenticação"; // Default fallback
                 let projectEmail = process.env.EMAIL_FROM;
+
+                // Tenta carregar o projeto padrão do banco como base
+                const defaultProjectId = process.env.NEXT_PUBLIC_PROJECT_ID;
+                if (defaultProjectId) {
+                    const defaultProject = await prisma.project.findUnique({ where: { id: defaultProjectId } });
+                    if (defaultProject) {
+                        projectName = defaultProject.name;
+                        if (defaultProject.email) projectEmail = defaultProject.email;
+                    }
+                }
 
                 if (callbackUrl) {
                     try {
@@ -46,10 +66,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                                 }
                             }
                         }
+
+
                     } catch (e) { }
                 }
 
-                const res = await fetch(process.env.BREVO_API_URL || 'https://api.brevo.com/v3/smtp/email', {
+                const res = await fetch(process.env.BREVO_API_URL!, {
                     method: 'POST',
                     headers: {
                         'api-key': process.env.BREVO_API_KEY as string,
@@ -129,52 +151,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 }
 
                 // Se for login via Google ou Email
-                if (account?.provider === "google" || account?.provider === "email") {
-                    // Para o provedor Email, a verificação manual aqui só deve ocorrer 
-                    // se o NextAuth já tiver validado o token (o adapter preenche o user)
-                    // No caso do Google, confiamos sempre.
-                    // @ts-ignore
-                    const isGoogle = account.provider === "google";
-                    // @ts-ignore
-                    const isEmailVerified = account.provider === "email" && user.emailVerified;
-
-                    if (isGoogle || isEmailVerified) {
-                        await prisma.user.updateMany({
-                            where: {
-                                email: user.email,
-                                OR: [
-                                    { role: "VISITOR" },
-                                    { emailVerified: null }
-                                ]
-                            },
-                            data: {
-                                role: "USER",
-                                // @ts-ignore
-                                emailVerified: user.emailVerified || new Date()
-                            }
-                        });
-
-                        // Garante que o usuário logado via Google/Email também tenha um projeto
-                        if (user.id) {
-                            const hasProject = await prisma.userProject.findFirst({
-                                where: { userId: user.id }
-                            });
-                            if (!hasProject) {
-                                const firstProject = await prisma.project.findFirst();
-                                if (firstProject) {
-                                    await prisma.userProject.create({
-                                        data: {
-                                            userId: user.id,
-                                            projectId: firstProject.id,
-                                            role: 'member'
-                                        }
-                                    });
-                                }
-                            }
-                        }
-                    }
-                }
-
                 return true;
             } catch (error) {
                 console.error("Erro no callback signIn:", error);
@@ -209,42 +185,89 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         },
     },
     events: {
-        async createUser({ user }) {
-            // Apenas promove o usuário a USER, mas NÃO marca emailVerified aqui.
-            // O emailVerified será preenchido pelo callback signIn somente após o clique no link.
-            if (user.id && user.email) {
-                try {
-                    await prisma.user.update({
-                        where: { id: user.id },
+        async signIn({ user, account }) {
+            try {
+                if (user?.email && (account?.provider === "google" || account?.provider === "email")) {
+                    await prisma.user.updateMany({
+                        where: {
+                            email: user.email,
+                            OR: [
+                                { role: "VISITOR" },
+                                { emailVerified: null }
+                            ]
+                        },
                         data: {
-                            role: "USER"
+                            role: "USER",
+                            emailVerified: new Date()
                         }
                     });
 
-                    // Garante que o usuário faça parte de ao menos um projeto (Regra: Todo usuário deve fazer parte de um projeto)
-                    const firstProject = await prisma.project.findFirst();
-                    if (firstProject) {
+                    if (user.id) {
+                        const hasProject = await prisma.userProject.findFirst({
+                            where: { userId: user.id }
+                        });
+                        if (!hasProject) {
+                            const defaultProjectId = process.env.NEXT_PUBLIC_PROJECT_ID;
+                            const projectToJoin = defaultProjectId
+                                ? await prisma.project.findUnique({ where: { id: defaultProjectId } })
+                                : await prisma.project.findFirst();
+
+                            if (projectToJoin) {
+                                await prisma.userProject.upsert({
+                                    where: {
+                                        userId_projectId: {
+                                            userId: user.id,
+                                            projectId: projectToJoin.id
+                                        }
+                                    },
+                                    create: {
+                                        userId: user.id,
+                                        projectId: projectToJoin.id,
+                                        role: 'member'
+                                    },
+                                    update: {}
+                                });
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("Erro no evento signIn:", error);
+            }
+        },
+        async createUser({ user }) {
+            try {
+                if (user.id) {
+                    // No createUser event, we only log for now. Promotion happens on signIn.
+                    console.log("Novo usuário criado:", user.email);
+
+                    // Garante que o usuário faça parte de ao menos um projeto
+                    const defaultProjectId = process.env.NEXT_PUBLIC_PROJECT_ID;
+                    const projectToJoin = defaultProjectId
+                        ? await prisma.project.findUnique({ where: { id: defaultProjectId } })
+                        : await prisma.project.findFirst();
+
+                    if (projectToJoin) {
                         await prisma.userProject.upsert({
                             where: {
                                 userId_projectId: {
                                     userId: user.id,
-                                    projectId: firstProject.id
+                                    projectId: projectToJoin.id
                                 }
                             },
                             create: {
                                 userId: user.id,
-                                projectId: firstProject.id,
+                                projectId: projectToJoin.id,
                                 role: 'member'
                             },
-                            update: {} // Já existe, não faz nada
+                            update: {}
                         });
-                        console.log(`Usuário ${user.email} associado ao projeto ${firstProject.name}`);
+                        console.log(`Usuário ${user.email} associado ao projeto ${projectToJoin.name}`);
                     }
-
-                    console.log("Novo usuário criado e promovido a USER (aguardando confirmação):", user.email);
-                } catch (error) {
-                    console.error("Erro ao configurar novo usuário:", error);
+                    console.log("Novo usuário criado e promovido a USER:", user.email);
                 }
+            } catch (error) {
+                console.error("Erro ao configurar novo usuário:", error);
             }
         }
     },

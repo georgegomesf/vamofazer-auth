@@ -22,7 +22,7 @@ export async function prepareMagicLinkUser(email: string) {
                 hour: '2-digit',
                 minute: '2-digit'
             });
-            const defaultName = `Visitante ${dateStr}`;
+            const defaultName = email.split('@')[0];
 
             await prisma.user.upsert({
                 where: { email },

@@ -7,24 +7,38 @@ export async function POST(request: Request) {
         const body = await request.json();
         console.log("MOBILE RESET PASSWORD BODY:", body);
         
-        let email = body.email;
-        const code = body.code || body.token;
+        let email = body.email?.toLowerCase().trim();
+        const rawCode = body.code || body.token;
         const newPassword = body.newPassword || body.password;
 
-        if (!code || !newPassword) {
-            console.warn("MOBILE RESET PASSWORD: Missing required data", { code: !!code, newPassword: !!newPassword });
+        if (!rawCode || !newPassword) {
+            console.warn("MOBILE RESET PASSWORD: Missing required data", { code: !!rawCode, newPassword: !!newPassword });
             return NextResponse.json({ error: "Dados incompletos" }, { status: 400 });
         }
 
+        // Limpa o código (remove espaços e garante maiúsculas para códigos de 6 caracteres)
+        const code = rawCode.trim().replace(/\s/g, "");
+        const finalToken = code.length === 6 ? code.toUpperCase() : code;
+
         const existingToken = await prisma.passwordResetToken.findFirst({
             where: {
-                token: code.toUpperCase(),
+                token: finalToken,
                 ...(email ? { email } : {}) 
             }
         });
 
         if (!existingToken) {
-            console.error("MOBILE RESET PASSWORD: Token not found", { code, email });
+            console.error("MOBILE RESET PASSWORD: Token not found in DB", { code: finalToken, email });
+            // Debug: Se falhou com email, verifica se o código existe para algum e-mail
+            const anyToken = await prisma.passwordResetToken.findUnique({
+                where: { token: finalToken }
+            });
+            if (anyToken) {
+                console.warn("MOBILE RESET PASSWORD: Token found but email mismatch!", {
+                    tokenEmail: anyToken.email,
+                    requestEmail: email
+                });
+            }
             return NextResponse.json({ error: "Código inválido" }, { status: 400 });
         }
 

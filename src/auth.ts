@@ -184,6 +184,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     id: user.id,
                     email: user.email,
                     name: user.name,
+                    image: user.image,
                     role: user.role,
                 };
             },
@@ -213,6 +214,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 session.user.id = user?.id || token?.sub;
                 // @ts-ignore
                 session.user.role = user?.role || token?.role;
+                // @ts-ignore
+                session.user.projectRole = (user as any)?.projectRole || token?.projectRole;
+                // @ts-ignore
+                session.user.image = (user as any)?.image || token?.picture || token?.image;
             }
             return session;
         },
@@ -220,7 +225,36 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             if (user) {
                 // @ts-ignore
                 token.role = user.role;
+                // @ts-ignore
+                token.picture = (user as any).image;
             }
+
+            // Tenta obter o projectRole para o projeto atual
+            const projectId = await getOriginProjectId();
+            if (projectId && token.sub) {
+                let userProject = await prisma.userProject.findFirst({
+                    where: { userId: token.sub, projectId: projectId }
+                });
+
+                if (!userProject) {
+                    const projectToJoin = await prisma.project.findUnique({ where: { id: projectId } });
+                    if (projectToJoin) {
+                        userProject = await prisma.userProject.create({
+                            data: {
+                                userId: token.sub,
+                                projectId: projectToJoin.id,
+                                role: projectToJoin.defaultEntryRole || 'member'
+                            }
+                        });
+                    }
+                }
+
+                if (userProject) {
+                    // @ts-ignore
+                    token.projectRole = userProject.role;
+                }
+            }
+
             return token;
         },
         async redirect({ url, baseUrl }) {

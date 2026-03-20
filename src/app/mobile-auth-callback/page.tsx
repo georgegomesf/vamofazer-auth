@@ -43,7 +43,7 @@ export default async function MobileAuthCallbackPage({ searchParams }: { searchP
         const secret = process.env.AUTH_SECRET || "default_mobile_secret";
         const token = jwt.sign(
             // @ts-ignore
-            { id: user.id, email: user.email, role: user.role, name: user.name },
+            { id: user.id, email: user.email, role: user.role, name: user.name, projectRole: user.projectRole },
             secret,
             { expiresIn: "7d" }
         );
@@ -54,6 +54,8 @@ export default async function MobileAuthCallbackPage({ searchParams }: { searchP
             name: user.name,
             // @ts-ignore
             role: user.role,
+            // @ts-ignore
+            projectRole: user.projectRole
         });
 
         // Salva no banco com expiração de 5 minutos

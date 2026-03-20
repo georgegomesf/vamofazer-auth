@@ -19,7 +19,7 @@ export async function GET(request: Request) {
         const secret = process.env.AUTH_SECRET || "default_mobile_secret";
         const token = jwt.sign(
             // @ts-ignore
-            { id: user.id, email: user.email, role: user.role, name: user.name },
+            { id: user.id, email: user.email, role: user.role, name: user.name, projectRole: user.projectRole },
             secret,
             { expiresIn: "7d" }
         );
@@ -30,7 +30,9 @@ export async function GET(request: Request) {
             email: user.email,
             name: user.name,
             // @ts-ignore
-            role: user.role
+            role: user.role,
+            // @ts-ignore
+            projectRole: user.projectRole
         }));
 
         // Redireciona via JS (mais confiável em Chrome Custom Tabs no Android)

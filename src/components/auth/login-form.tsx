@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { prepareMagicLinkUser } from "@/actions/magic-link";
 
-export default function LoginForm() {
+export default function LoginForm({ isLoggedIn }: { isLoggedIn?: boolean }) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
@@ -38,6 +38,14 @@ export default function LoginForm() {
             handleGoogleLogin();
         }
     }, [autoLogin]);
+
+    useEffect(() => {
+        if (isLoggedIn && callbackUrl) {
+            // Se já estamos logados mas caímos aqui, forçamos um recarregamento para esta mesma página.
+            // O middleware (proxy.ts) agora deve notar a sessão e fazer o salto para a aplicação remota com o token 'st'.
+            window.location.href = `/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+        }
+    }, [isLoggedIn, callbackUrl]);
 
     const handleCredentialsLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -105,6 +113,17 @@ export default function LoginForm() {
             setLoading(false);
         }
     };
+
+    if (autoLogin || (isLoggedIn && callbackUrl)) {
+        return (
+            <div className="flex flex-col items-center justify-center p-8 gap-4">
+                <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
+                <p className="text-zinc-500 text-sm font-medium animate-pulse">
+                    {autoLogin ? `Autenticando via ${autoLogin}...` : "Redirecionando..."}
+                </p>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-4">

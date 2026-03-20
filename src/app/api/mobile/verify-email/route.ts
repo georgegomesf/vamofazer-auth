@@ -55,10 +55,32 @@ export async function POST(request: Request) {
             }
         });
 
+        const projectId = body.projectId;
+        let projectRole = null;
+        if (projectId) {
+            let userProject = await prisma.userProject.findFirst({
+                where: { userId: user.id, projectId: projectId }
+            });
+
+            if (!userProject) {
+                const projectToJoin = await prisma.project.findUnique({ where: { id: projectId } });
+                if (projectToJoin) {
+                    userProject = await prisma.userProject.create({
+                        data: {
+                            userId: user.id,
+                            projectId: projectToJoin.id,
+                            role: projectToJoin.defaultEntryRole || 'member'
+                        }
+                    });
+                }
+            }
+            projectRole = userProject?.role;
+        }
+
         // Gera JWT para o mobile
         const secret = process.env.AUTH_SECRET || "default_mobile_secret";
         const token = jwt.sign(
-            { id: user.id, email: user.email, role: user.role, name: user.name },
+            { id: user.id, email: user.email, role: user.role, name: user.name, projectRole: projectRole },
             secret,
             { expiresIn: "7d" }
         );
@@ -70,7 +92,8 @@ export async function POST(request: Request) {
                 id: user.id,
                 email: user.email,
                 name: user.name,
-                role: user.role
+                role: user.role,
+                projectRole: projectRole
             }
         });
     } catch (error) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, Suspense } from "react";
+import { useEffect, Suspense, useRef } from "react";
 import { signOut } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
@@ -9,15 +9,24 @@ function SignOutContent() {
     const searchParams = useSearchParams();
     const finalCallbackUrl = searchParams.get("callbackUrl") || "/";
 
+    const isStarted = useRef(false);
     useEffect(() => {
         const performSignOut = async () => {
+            if (isStarted.current) return;
+            isStarted.current = true;
+            
             console.log("AUTH SIGNOUT: Starting process...");
 
-            // Realiza apenas o logout no domínio central
-            await signOut({
-                callbackUrl: finalCallbackUrl,
-                redirect: true
-            });
+            try {
+                // Realiza apenas o logout no domínio central
+                await signOut({
+                    callbackUrl: finalCallbackUrl,
+                    redirect: true
+                });
+            } catch (err) {
+                console.warn("Global signOut encountered a minor error, forcing manual redirect:", err);
+                window.location.href = finalCallbackUrl;
+            }
         };
 
         performSignOut();

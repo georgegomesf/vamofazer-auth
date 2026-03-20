@@ -42,12 +42,44 @@ export default auth(async (req) => {
 
                             console.log(`AUTH PROXY: Creating transfer token for user ${req.auth.user.email}`);
 
+                            // Tenta obter o projectRole para o destino, caso não esteja na sessão
+                            let projectRole = (req.auth.user as any).projectRole;
+                            if (!projectRole && callbackUrl) {
+                                try {
+                                    const url = new URL(callbackUrl, nextUrl.origin);
+                                    const projectId = url.searchParams.get("projectId");
+                                    if (projectId && req.auth.user.id) {
+                                        const { default: prisma } = await import("@/lib/prisma");
+                                        let userProject = await prisma.userProject.findFirst({
+                                            where: { userId: req.auth.user.id, projectId: projectId }
+                                        });
+
+                                        if (!userProject) {
+                                            const projectToJoin = await prisma.project.findUnique({ where: { id: projectId } });
+                                            if (projectToJoin) {
+                                                userProject = await prisma.userProject.create({
+                                                    data: {
+                                                        userId: req.auth.user.id,
+                                                        projectId: projectToJoin.id,
+                                                        role: projectToJoin.defaultEntryRole || 'member'
+                                                    }
+                                                });
+                                            }
+                                        }
+                                        projectRole = userProject?.role;
+                                    }
+                                } catch (e) { }
+                            }
+
                             const token = await new SignJWT({
                                 id: req.auth.user.id,
                                 email: req.auth.user.email,
                                 name: req.auth.user.name,
+                                image: req.auth.user.image,
                                 // @ts-ignore
-                                role: req.auth.user.role || "USER"
+                                role: req.auth.user.role || "USER",
+                                // @ts-ignore
+                                projectRole: projectRole
                             })
                                 .setProtectedHeader({ alg: "HS256" })
                                 .setExpirationTime("2m")

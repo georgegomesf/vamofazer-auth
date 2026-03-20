@@ -1,12 +1,29 @@
 export const dynamic = "force-dynamic";
 import { auth, signOut } from "@/auth";
-import { User, LogOut, Shield, Settings, ExternalLink, Smartphone } from "lucide-react";
+import { User, LogOut, Shield, Settings, ExternalLink, Smartphone, Loader2 } from "lucide-react";
+import { redirect } from "next/navigation";
 import Image from "next/image";
 
 import prisma from "@/lib/prisma";
 
-export default async function Home() {
+export default async function Home({ searchParams }: { searchParams: Promise<{ callbackUrl?: string }> }) {
+  const { callbackUrl } = await searchParams;
   const session = await auth();
+
+  // Se houver um callbackUrl, estamos em "passagem"
+  if (callbackUrl) {
+    // Redireciona para o signin que já tem a lógica de transferir o token no proxy.ts
+    // Se o usuário já estiver logado, o proxy.ts redirecionará de volta para o callbackUrl
+    // Se não estiver, o formulário de login será exibido.
+    redirect(`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+
+    // While redirecting, show a simple loader
+    return (
+      <main className="min-h-screen bg-white flex items-center justify-center">
+        <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
+      </main>
+    );
+  }
 
   const defaultProjectId = process.env.NEXT_PUBLIC_PROJECT_ID;
   let projectName = "Autenticação";
@@ -28,14 +45,14 @@ export default async function Home() {
             priority
           />
         </div>
-        <div className="flex gap-4">
+        {/* <div className="flex gap-4">
           <a href="/auth/signin" className="bg-zinc-950 text-white px-8 py-3 rounded-xl font-bold hover:bg-zinc-800 transition-all">
             Entrar
           </a>
           <a href="/auth/signup" className="border border-zinc-200 px-8 py-3 rounded-xl font-bold hover:bg-zinc-100 transition-all">
             Criar Conta
           </a>
-        </div>
+        </div> */}
       </main>
     );
   }

@@ -38,33 +38,34 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "E-mail ou senha incorretos" }, { status: 401 });
         }
 
-        // Generate JWT token for mobile app
-        const secret = process.env.AUTH_SECRET || "default_mobile_secret";
-        const token = jwt.sign(
-            { id: user.id, email: user.email, role: user.role, name: user.name },
-            secret,
-            { expiresIn: "7d" }
-        );
-
+        let projectRole = null;
         if (body.projectId) {
-            const hasProject = await prisma.userProject.findFirst({
+            let userProject = await prisma.userProject.findFirst({
                 where: { userId: user.id, projectId: body.projectId }
             });
 
-            if (!hasProject) {
+            if (!userProject) {
                 const projectToJoin = await prisma.project.findUnique({ where: { id: body.projectId } });
                 if (projectToJoin) {
-                    await prisma.userProject.create({
+                    userProject = await prisma.userProject.create({
                         data: {
                             userId: user.id,
                             projectId: projectToJoin.id,
-                            role: 'member'
+                            role: projectToJoin.defaultEntryRole || 'member'
                         }
                     });
                 }
             }
+            projectRole = userProject?.role;
         }
 
+        // Generate JWT token for mobile app
+        const secret = process.env.AUTH_SECRET || "default_mobile_secret";
+        const token = jwt.sign(
+            { id: user.id, email: user.email, role: user.role, name: user.name, projectRole: projectRole },
+            secret,
+            { expiresIn: "7d" }
+        );
 
         return NextResponse.json({
             success: "Login realizado com sucesso",
@@ -73,7 +74,9 @@ export async function POST(request: Request) {
                 id: user.id,
                 email: user.email,
                 name: user.name,
-                role: user.role
+                image: user.image,
+                role: user.role,
+                projectRole: projectRole
             }
         });
     } catch (error) {

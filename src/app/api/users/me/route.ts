@@ -4,16 +4,37 @@ import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { del, put } from "@vercel/blob";
 import { corsResponse, corsOptions } from "@/lib/cors";
+import jwt from "jsonwebtoken";
+
+async function getUserIdFromRequest(request: Request) {
+    // 1. Try session (Cookies)
+    const session = await auth();
+    if (session?.user?.id) return session.user.id;
+
+    // 2. Try Authorization Header
+    const authHeader = request.headers.get("authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+        const token = authHeader.substring(7);
+        try {
+            const decoded = jwt.verify(token, process.env.AUTH_SECRET!) as any;
+            return decoded.id || decoded.sub;
+        } catch (e) {
+            console.error("JWT Verify Error:", e);
+        }
+    }
+
+    return null;
+}
 
 export async function GET(request: Request) {
     try {
-        const session = await auth();
-        if (!session?.user?.id) {
+        const userId = await getUserIdFromRequest(request);
+        if (!userId) {
             return corsResponse(NextResponse.json({ error: "Unauthorized" }, { status: 401 }), request);
         }
 
         const user = await prisma.user.findUnique({
-            where: { id: session.user.id as string },
+            where: { id: userId as string },
             select: {
                 id: true,
                 name: true,
@@ -36,12 +57,11 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
     try {
-        const session = await auth();
-        if (!session?.user?.id) {
+        const userId = await getUserIdFromRequest(request);
+        if (!userId) {
             return corsResponse(NextResponse.json({ error: "Unauthorized" }, { status: 401 }), request);
         }
 
-        const userId = session.user.id as string;
         const formData = await request.formData();
         const updateData: any = {};
 
@@ -100,12 +120,11 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
     try {
-        const session = await auth();
-        if (!session?.user?.id) {
+        const userId = await getUserIdFromRequest(request);
+        if (!userId) {
             return corsResponse(NextResponse.json({ error: "Unauthorized" }, { status: 401 }), request);
         }
 
-        const userId = session.user.id as string;
         const { searchParams } = new URL(request.url);
         const projectId = searchParams.get("projectId");
         const mode = searchParams.get("mode"); // 'partial' or 'total'

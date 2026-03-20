@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     try {
         const session = await auth();
         if (!session?.user?.id) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return corsResponse(NextResponse.json({ error: "Unauthorized" }, { status: 401 }), request);
         }
 
         const user = await prisma.user.findUnique({
@@ -24,13 +24,13 @@ export async function GET(request: Request) {
         });
 
         if (!user) {
-            return NextResponse.json({ error: "User not found" }, { status: 404 });
+            return corsResponse(NextResponse.json({ error: "User not found" }, { status: 404 }), request);
         }
 
         return corsResponse(NextResponse.json(user), request);
     } catch (error) {
         console.error("Error fetching me:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+        return corsResponse(NextResponse.json({ error: "Internal Server Error" }, { status: 500 }), request);
     }
 }
 
@@ -38,7 +38,7 @@ export async function PATCH(request: Request) {
     try {
         const session = await auth();
         if (!session?.user?.id) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return corsResponse(NextResponse.json({ error: "Unauthorized" }, { status: 401 }), request);
         }
 
         const userId = session.user.id as string;
@@ -94,7 +94,7 @@ export async function PATCH(request: Request) {
         return corsResponse(NextResponse.json(updatedUser), request);
     } catch (error) {
         console.error("Error updating profile:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+        return corsResponse(NextResponse.json({ error: "Internal Server Error" }, { status: 500 }), request);
     }
 }
 
@@ -102,7 +102,7 @@ export async function DELETE(request: Request) {
     try {
         const session = await auth();
         if (!session?.user?.id) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return corsResponse(NextResponse.json({ error: "Unauthorized" }, { status: 401 }), request);
         }
 
         const userId = session.user.id as string;
@@ -129,13 +129,13 @@ export async function DELETE(request: Request) {
             });
             message = "Conta excluída completamente!";
         } else {
-            return NextResponse.json({ error: "Invalid mode or missing parameters" }, { status: 400 });
+            return corsResponse(NextResponse.json({ error: "Invalid mode or missing parameters" }, { status: 400 }), request);
         }
 
         return corsResponse(NextResponse.json({ success: true, message }), request);
     } catch (error) {
         console.error("Error deleting account:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+        return corsResponse(NextResponse.json({ error: "Internal Server Error" }, { status: 500 }), request);
     }
 }
 

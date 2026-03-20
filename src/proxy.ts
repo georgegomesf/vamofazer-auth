@@ -71,6 +71,21 @@ export default auth(async (req) => {
                                 } catch (e) { }
                             }
 
+                            // Generate a persistent token for future API calls
+                            const persistentTokenPayload = { 
+                                id: req.auth.user.id, 
+                                email: req.auth.user.email, 
+                                // @ts-ignore
+                                role: req.auth.user.role, 
+                                name: req.auth.user.name, 
+                                projectRole: projectRole 
+                            };
+                            
+                            const persistentToken = await new SignJWT(persistentTokenPayload)
+                                .setProtectedHeader({ alg: "HS256" })
+                                .setExpirationTime("7d")
+                                .sign(secret);
+
                             const token = await new SignJWT({
                                 id: req.auth.user.id,
                                 email: req.auth.user.email,
@@ -79,7 +94,8 @@ export default auth(async (req) => {
                                 // @ts-ignore
                                 role: req.auth.user.role || "USER",
                                 // @ts-ignore
-                                projectRole: projectRole
+                                projectRole: projectRole,
+                                token: persistentToken // Pass the persistent token here
                             })
                                 .setProtectedHeader({ alg: "HS256" })
                                 .setExpirationTime("2m")

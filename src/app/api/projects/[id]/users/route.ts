@@ -13,6 +13,7 @@ export async function GET(
         // Find all users associated with this project
         const userProjects = await prisma.userProject.findMany({
             where: { projectId: id },
+            orderBy: { createdAt: "desc" },
             include: {
                 user: {
                     select: {

@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 
-export default auth(async (req) => {
+export const proxy = auth(async (req) => {
     const { nextUrl } = req;
     const isLoggedIn = !!req.auth;
 
@@ -140,6 +140,7 @@ export default auth(async (req) => {
 
     return response;
 });
+export default proxy;
 
 export const config = {
     matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],

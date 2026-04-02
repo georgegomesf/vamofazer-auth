@@ -280,31 +280,46 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return token;
         },
         async redirect({ url, baseUrl }) {
-            // Allow redirects to our domains and localhost for development
-            const envDomains = process.env.ALLOWED_DOMAINS ? process.env.ALLOWED_DOMAINS.split(",").map(d => d.trim()) : [];
-            const allowedDomains = ["localhost", ...envDomains];
-            if (url.startsWith("http://") || url.startsWith("https://")) {
-                try {
-                    const parsedUrl = new URL(url);
-                    const isAllowed = allowedDomains.some(domain => {
-                        const hostname = parsedUrl.hostname.toLowerCase();
-                        const target = domain.toLowerCase();
-                        return hostname === target || hostname.endsWith(`.${target}`);
-                    });
+            try {
+                // Allow redirects to our domains and localhost for development
+                const envDomains = process.env.ALLOWED_DOMAINS ? process.env.ALLOWED_DOMAINS.split(",").map(d => d.trim()) : [];
+                const allowedDomains = [
+                    "localhost", 
+                    "vamofazer.com.br", 
+                    "redefilosofica.com.br", 
+                    "basefilosofica.com.br",
+                    "levinasbrasil.com.br", 
+                    "ge-sartre.com.br",
+                    ...envDomains
+                ];
 
-                    if (isAllowed) {
-                        console.log(`AUTH SERVICE: Redirecting to ${url}`);
-                        return url;
-                    }
-                } catch (e) {
-                    // Invalid URL
+                const parsedUrl = new URL(url.startsWith("http") ? url : `${baseUrl}${url}`);
+                const isAllowed = allowedDomains.some(domain => {
+                    const hostname = parsedUrl.hostname.toLowerCase();
+                    const target = domain.toLowerCase();
+                    return hostname === target || hostname.endsWith(`.${target}`);
+                });
+
+                if (!isAllowed) {
+                    console.log(`AUTH SERVICE: Blocked redirect to external domain: ${url}`);
+                    return baseUrl;
                 }
 
-                console.log(`AUTH SERVICE: Blocked redirect to external domain: ${url}`);
+                // ESTRATÉGIA SSO: Se o domínio for EXTRENO (não é o Auth Service), 
+                // e não estamos vindo de uma rota de API (onde o middleware não atua),
+                // redirecionamos para o /auth/signin que o nosso middleware (proxy.ts) intercepta
+                // e gera o token 'st'.
+                const authHost = new URL(baseUrl).host;
+                if (parsedUrl.host !== authHost && !parsedUrl.pathname.includes("/auth/callback")) {
+                    console.log(`AUTH SERVICE: Redirecting from API to Interstitial for ${parsedUrl.host}`);
+                    return `${baseUrl}/auth/signin?callbackUrl=${encodeURIComponent(url)}`;
+                }
+
+                return url;
+            } catch (e) {
+                console.error("AUTH SERVICE: Error in redirect callback:", e);
                 return baseUrl;
             }
-            if (url.startsWith("/")) return `${baseUrl}${url}`;
-            return baseUrl;
         },
     },
     events: {

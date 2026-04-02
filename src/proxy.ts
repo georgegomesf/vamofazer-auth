@@ -38,12 +38,15 @@ export default auth(async (req) => {
                     }
 
                     // Se o domínio de destino for diferente do atual, enviamos um token de transferência
-                    const currentHost = req.headers.get("host") || "";
-                    const targetHost = url.host;
+                    const currentHost = req.headers.get("host")?.toLowerCase() || "";
+                    const targetHost = url.host.toLowerCase();
+                    
+                    // Compara as bases dos domínios para detectar troca de site (ex: redefilosofica vs basefilosofica)
+                    const isDifferentDomain = currentHost !== targetHost;
 
-                    console.log(`AUTH PROXY: Origin=${currentHost}, Destination=${targetHost}`);
+                    console.log(`AUTH PROXY: Origin=${currentHost}, Destination=${targetHost}, isDifferent=${isDifferentDomain}`);
 
-                    if (currentHost !== targetHost && req.auth?.user) {
+                    if (isDifferentDomain && req.auth?.user) {
                         try {
                             const { SignJWT } = await import("jose");
                             const secret = new TextEncoder().encode(process.env.AUTH_SECRET);

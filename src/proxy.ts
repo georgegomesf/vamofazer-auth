@@ -21,7 +21,7 @@ export const proxy = auth(async (req) => {
 
                     // Validate redirect to prevent Open Redirect attacks!
                     const envDomains = process.env.ALLOWED_DOMAINS ? process.env.ALLOWED_DOMAINS.split(",").map(d => d.trim()) : [];
-                    const allowedDomains = ["localhost", "vamofazer.com.br", "redefilosofica.com.br", "levinasbrasil.com.br", "ge-sartre.com.br", ...envDomains];
+                    const allowedDomains = ["localhost", ...envDomains];
                     const isAllowed = allowedDomains.some(domain => url.hostname.endsWith(domain) || url.hostname === domain);
 
                     if (!isAllowed) {
@@ -72,15 +72,15 @@ export const proxy = auth(async (req) => {
                             }
 
                             // Generate a persistent token for future API calls
-                            const persistentTokenPayload = { 
-                                id: req.auth.user.id, 
-                                email: req.auth.user.email, 
+                            const persistentTokenPayload = {
+                                id: req.auth.user.id,
+                                email: req.auth.user.email,
                                 // @ts-ignore
-                                role: req.auth.user.role, 
-                                name: req.auth.user.name, 
-                                projectRole: projectRole 
+                                role: req.auth.user.role,
+                                name: req.auth.user.name,
+                                projectRole: projectRole
                             };
-                            
+
                             const persistentToken = await new SignJWT(persistentTokenPayload)
                                 .setProtectedHeader({ alg: "HS256" })
                                 .setExpirationTime("7d")

@@ -19,8 +19,16 @@ function SignOutContent() {
 
             try {
                 // Realiza apenas o logout no domínio central
+                // Anexa um parâmetro fromSignOut para que o auth.ts libere o redirect sem forçar /auth/signin
+                let destUrl = finalCallbackUrl;
+                try {
+                    const u = new URL(finalCallbackUrl, window.location.origin);
+                    u.searchParams.set("fromSignOut", "1");
+                    destUrl = u.toString();
+                } catch { }
+
                 await signOut({
-                    callbackUrl: finalCallbackUrl,
+                    callbackUrl: destUrl,
                     redirect: true
                 });
             } catch (err) {

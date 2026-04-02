@@ -310,7 +310,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 // redirecionamos para o /auth/signin que o nosso middleware (proxy.ts) intercepta
                 // e gera o token 'st'.
                 const authHost = new URL(baseUrl).host;
-                if (parsedUrl.host !== authHost && !parsedUrl.pathname.includes("/auth/callback")) {
+                if (parsedUrl.host !== authHost && !parsedUrl.pathname.includes("/auth/callback") && !parsedUrl.searchParams.has("fromSignOut")) {
                     console.log(`AUTH SERVICE: Redirecting from API to Interstitial for ${parsedUrl.host}`);
                     return `${baseUrl}/auth/signin?callbackUrl=${encodeURIComponent(url)}`;
                 }

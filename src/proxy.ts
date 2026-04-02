@@ -21,7 +21,15 @@ export default auth(async (req) => {
 
                     // Validate redirect to prevent Open Redirect attacks!
                     const envDomains = process.env.ALLOWED_DOMAINS ? process.env.ALLOWED_DOMAINS.split(",").map(d => d.trim()) : [];
-                    const allowedDomains = ["localhost", ...envDomains];
+                    const allowedDomains = [
+                        "localhost", 
+                        "vamofazer.com.br", 
+                        "redefilosofica.com.br", 
+                        "basefilosofica.com.br", 
+                        "levinasbrasil.com.br", 
+                        "ge-sartre.com.br", 
+                        ...envDomains
+                    ];
                     const isAllowed = allowedDomains.some(domain => url.hostname.endsWith(domain) || url.hostname === domain);
 
                     if (!isAllowed) {

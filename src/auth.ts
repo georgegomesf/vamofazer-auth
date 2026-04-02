@@ -260,7 +260,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         async redirect({ url, baseUrl }) {
             // Allow redirects to our domains and localhost for development
             const envDomains = process.env.ALLOWED_DOMAINS ? process.env.ALLOWED_DOMAINS.split(",").map(d => d.trim()) : [];
-            const allowedDomains = ["localhost", "vamofazer.com.br", "redefilosofica.com.br", "levinasbrasil.com.br", "ge-sartre.com.br", ...envDomains];
+            const allowedDomains = ["localhost", ...envDomains];
             if (url.startsWith("http://") || url.startsWith("https://")) {
                 try {
                     const parsedUrl = new URL(url);
@@ -269,7 +269,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                         const target = domain.toLowerCase();
                         return hostname === target || hostname.endsWith(`.${target}`);
                     });
-                    
+
                     if (isAllowed) {
                         console.log(`AUTH SERVICE: Redirecting to ${url}`);
                         return url;
@@ -360,7 +360,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                                 userId: user.id,
                                 projectId: projectToJoin.id,
                                 role: projectToJoin.defaultEntryRole || 'visitor'
-                              },
+                            },
                             update: {}
                         });
                         console.log(`Usuário ${user.email} associado ao projeto ${projectToJoin.name}`);

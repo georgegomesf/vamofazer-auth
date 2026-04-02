@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
+import { getWallClockNow } from "@/lib/date-utils";
 
 export async function POST(request: Request) {
     try {
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
         // Se o email não foi enviado no corpo, mas temos o token, usamos o email do token
         if (!email) email = existingToken.email;
 
-        const hasExpired = new Date(existingToken.expires) < new Date();
+        const hasExpired = new Date(existingToken.expires) < getWallClockNow();
 
         if (hasExpired) {
             await prisma.passwordResetToken.delete({

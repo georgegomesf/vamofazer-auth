@@ -1,9 +1,10 @@
 import { v4 as uuidv4 } from "uuid";
 import prisma from "@/lib/prisma";
+import { getWallClockNow } from "@/lib/date-utils";
 
 export const generatePasswordResetToken = async (email: string) => {
     const token = uuidv4();
-    const expires = new Date(new Date().getTime() + 3600 * 1000); // 1 hora de validade
+    const expires = new Date(getWallClockNow().getTime() + 3600 * 1000); // 1 hora de validade
 
     const existingToken = await prisma.passwordResetToken.findFirst({
         where: { email }
@@ -34,7 +35,7 @@ export const generatePasswordResetCode = async (email: string) => {
         code += characters.charAt(Math.floor(Math.random() * characters.length));
     }
 
-    const expires = new Date(new Date().getTime() + 15 * 60 * 1000); // 15 minutos de validade
+    const expires = new Date(getWallClockNow().getTime() + 15 * 60 * 1000); // 15 minutos de validade
 
     const existingToken = await prisma.passwordResetToken.findFirst({
         where: { email }
@@ -65,7 +66,7 @@ export const generateVerificationCode = async (email: string) => {
         code += characters.charAt(Math.floor(Math.random() * characters.length));
     }
 
-    const expires = new Date(new Date().getTime() + 15 * 60 * 1000); // 15 minutos de validade
+    const expires = new Date(getWallClockNow().getTime() + 15 * 60 * 1000); // 15 minutos de validade
 
     // Tenta deletar se já existir um código para este e-mail
     const existingToken = await prisma.verificationToken.findFirst({

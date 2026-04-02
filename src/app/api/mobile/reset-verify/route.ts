@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { getWallClockNow } from "@/lib/date-utils";
 
 export async function POST(request: Request) {
     try {
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Código inválido ou não encontrado" }, { status: 400 });
         }
 
-        const hasExpired = new Date(existingToken.expires) < new Date();
+        const hasExpired = new Date(existingToken.expires) < getWallClockNow();
 
         if (hasExpired) {
             await prisma.passwordResetToken.delete({

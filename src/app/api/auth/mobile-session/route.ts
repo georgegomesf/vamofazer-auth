@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { getWallClockNow } from "@/lib/date-utils";
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -18,7 +19,7 @@ export async function GET(request: Request) {
         return NextResponse.json({ pending: true });
     }
 
-    if (mobileSession.expires < new Date()) {
+    if (mobileSession.expires < getWallClockNow()) {
         await prisma.mobileAuthSession.delete({ where: { sessionId } });
         return NextResponse.json({ error: "session_expired" }, { status: 410 });
     }

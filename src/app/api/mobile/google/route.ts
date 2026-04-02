@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
+import { getWallClockNow } from "@/lib/date-utils";
 
 export async function POST(request: Request) {
     try {
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
                     name,
                     email,
                     role: "USER",
-                    emailVerified: new Date(),
+                    emailVerified: getWallClockNow()
                 }
             });
         } else if (user.role === "VISITOR" || !user.emailVerified) {
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
                 where: { email },
                 data: {
                     role: "USER",
-                    emailVerified: new Date()
+                    emailVerified: getWallClockNow()
                 }
             })
         }

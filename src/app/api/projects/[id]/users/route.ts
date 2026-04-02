@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { corsResponse, corsOptions } from "@/lib/cors";
+import { getWallClockNow } from "@/lib/date-utils";
 
 export async function GET(
     request: Request,
@@ -69,7 +70,7 @@ export async function POST(
                     email,
                     password: hashedPassword,
                     role: "USER", // Global role defaults to USER
-                    emailVerified: new Date(), // Admin created, assume verified for now
+                    emailVerified: getWallClockNow(), // Admin created, assume verified for now
                 }
             });
         }

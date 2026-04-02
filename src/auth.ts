@@ -6,6 +6,7 @@ import Credentials from "next-auth/providers/credentials";
 import Email from "next-auth/providers/email";
 import bcrypt from "bcryptjs";
 import { headers, cookies } from "next/headers";
+import { getWallClockNow } from "@/lib/date-utils";
 
 async function getOriginProjectId() {
     let projectId = process.env.NEXT_PUBLIC_PROJECT_ID;
@@ -86,7 +87,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     name: profile.name,
                     email: profile.email,
                     image: profile.picture,
-                    emailVerified: new Date(),
+                    emailVerified: getWallClockNow(),
                     role: "USER",
                 };
             },
@@ -337,7 +338,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                         },
                         data: {
                             role: "USER",
-                            emailVerified: new Date()
+                            emailVerified: getWallClockNow()
                         }
                     });
 
@@ -357,7 +358,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                         where: { id: user.id },
                         data: {
                             role: "USER",
-                            emailVerified: new Date()
+                            emailVerified: getWallClockNow()
                         }
                     });
 

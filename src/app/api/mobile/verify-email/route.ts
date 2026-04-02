@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
+import { getWallClockNow } from "@/lib/date-utils";
 
 export async function POST(request: Request) {
     try {
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Código inválido ou expirado" }, { status: 400 });
         }
 
-        const hasExpired = new Date(verificationToken.expires) < new Date();
+        const hasExpired = new Date(verificationToken.expires) < getWallClockNow();
 
         if (hasExpired) {
             await prisma.verificationToken.delete({
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
         const user = await prisma.user.update({
             where: { email },
             data: {
-                emailVerified: new Date(),
+                emailVerified: getWallClockNow(),
                 role: 'USER' // Promoção automática se for visitante
             }
         });

@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { UserRole } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { getWallClockNow } from "@/lib/date-utils";
 import { generateVerificationCode } from "@/lib/tokens";
 import { sendVerificationCodeEmail } from "@/lib/mail";
 
@@ -32,6 +33,8 @@ export async function POST(request: Request) {
                 password: hashedPassword,
                 role: UserRole.VISITOR,
                 emailVerified: null, // Garante que comece nulo
+                createdAt: getWallClockNow(),
+                updatedAt: getWallClockNow(),
             },
         });
 
@@ -42,7 +45,8 @@ export async function POST(request: Request) {
                     data: {
                         userId: user.id,
                         projectId: projectToJoin.id,
-                        role: projectToJoin.defaultEntryRole || 'visitor'
+                        role: projectToJoin.defaultEntryRole || 'visitor',
+                        createdAt: getWallClockNow()
                     }
                 });
             }

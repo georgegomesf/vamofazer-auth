@@ -2,6 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { getWallClockNow } from "@/lib/date-utils";
 
 export async function updatePassword(formData: FormData, token: string | null) {
     if (!token) {
@@ -27,7 +28,7 @@ export async function updatePassword(formData: FormData, token: string | null) {
         return { error: "Token inválido" };
     }
 
-    const hasExpired = new Date(existingToken.expires) < new Date();
+    const hasExpired = new Date(existingToken.expires) < getWallClockNow();
 
     if (hasExpired) {
         return { error: "O token expirou" };

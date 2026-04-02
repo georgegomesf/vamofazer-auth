@@ -11,6 +11,7 @@ async function getOriginProjectId() {
     let projectId = process.env.NEXT_PUBLIC_PROJECT_ID;
     try {
         const cookieStore = await cookies();
+        // Fallback names for cookie domain/auth settings
         const cbUrl = cookieStore.get("__Secure-authjs.callback-url")?.value || cookieStore.get("authjs.callback-url")?.value;
         if (cbUrl) {
             const tempUrl = cbUrl.startsWith("http") ? cbUrl : `http://localhost${cbUrl}`;
@@ -29,6 +30,43 @@ async function getOriginProjectId() {
         }
     } catch (e) { }
     return projectId;
+}
+
+/**
+ * Ensures the user is associated with the current project
+ */
+async function ensureUserProjectAssociation(userId: string) {
+    try {
+        const projectId = await getOriginProjectId();
+        if (!projectId) return null;
+
+        let userProject = await prisma.userProject.findUnique({
+            where: {
+                userId_projectId: {
+                    userId: userId,
+                    projectId: projectId
+                }
+            }
+        });
+
+        if (!userProject) {
+            const project = await prisma.project.findUnique({ where: { id: projectId } });
+            if (project) {
+                userProject = await prisma.userProject.create({
+                    data: {
+                        userId: userId,
+                        projectId: project.id,
+                        role: project.defaultEntryRole || 'member'
+                    }
+                });
+                console.log(`AUTH: User ${userId} auto-associated with project ${project.name} (${project.id}) with role ${userProject.role}`);
+            }
+        }
+        return userProject;
+    } catch (error) {
+        console.error("AUTH: Error in ensureUserProjectAssociation:", error);
+        return null;
+    }
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -232,23 +270,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             // Tenta obter o projectRole para o projeto atual
             const projectId = await getOriginProjectId();
             if (projectId && token.sub) {
-                let userProject = await prisma.userProject.findFirst({
-                    where: { userId: token.sub, projectId: projectId }
-                });
-
-                if (!userProject) {
-                    const projectToJoin = await prisma.project.findUnique({ where: { id: projectId } });
-                    if (projectToJoin) {
-                        userProject = await prisma.userProject.create({
-                            data: {
-                                userId: token.sub,
-                                projectId: projectToJoin.id,
-                                role: projectToJoin.defaultEntryRole || 'member'
-                            }
-                        });
-                    }
-                }
-
+                const userProject = await ensureUserProjectAssociation(token.sub);
                 if (userProject) {
                     // @ts-ignore
                     token.projectRole = userProject.role;
@@ -289,6 +311,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         async signIn({ user, account }) {
             try {
                 if (user?.email && (account?.provider === "google" || account?.provider === "email")) {
+                    // Promoção automática para USER ao logar via Google/MagicLink
                     await prisma.user.updateMany({
                         where: {
                             email: user.email,
@@ -304,32 +327,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     });
 
                     if (user.id) {
-                        const hasProject = await prisma.userProject.findFirst({
-                            where: { userId: user.id }
-                        });
-                        if (!hasProject) {
-                            const defaultProjectId = await getOriginProjectId();
-                            const projectToJoin = defaultProjectId
-                                ? await prisma.project.findUnique({ where: { id: defaultProjectId } })
-                                : await prisma.project.findFirst();
-
-                            if (projectToJoin) {
-                                await prisma.userProject.upsert({
-                                    where: {
-                                        userId_projectId: {
-                                            userId: user.id,
-                                            projectId: projectToJoin.id
-                                        }
-                                    },
-                                    create: {
-                                        userId: user.id,
-                                        projectId: projectToJoin.id,
-                                        role: projectToJoin.defaultEntryRole || 'visitor'
-                                    },
-                                    update: {}
-                                });
-                            }
-                        }
+                        await ensureUserProjectAssociation(user.id);
                     }
                 }
             } catch (error) {
@@ -339,33 +337,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         async createUser({ user }) {
             try {
                 if (user.id) {
-                    // No createUser event, we only log for now. Promotion happens on signIn.
-                    console.log("Novo usuário criado:", user.email);
+                    // Define role inicial como USER e email verificado para novos usuários de provedores externos
+                    await prisma.user.update({
+                        where: { id: user.id },
+                        data: {
+                            role: "USER",
+                            emailVerified: new Date()
+                        }
+                    });
 
-                    // Garante que o usuário faça parte de ao menos um projeto
-                    const defaultProjectId = await getOriginProjectId();
-                    const projectToJoin = defaultProjectId
-                        ? await prisma.project.findUnique({ where: { id: defaultProjectId } })
-                        : await prisma.project.findFirst();
-
-                    if (projectToJoin) {
-                        await prisma.userProject.upsert({
-                            where: {
-                                userId_projectId: {
-                                    userId: user.id,
-                                    projectId: projectToJoin.id
-                                }
-                            },
-                            create: {
-                                userId: user.id,
-                                projectId: projectToJoin.id,
-                                role: projectToJoin.defaultEntryRole || 'visitor'
-                            },
-                            update: {}
-                        });
-                        console.log(`Usuário ${user.email} associado ao projeto ${projectToJoin.name}`);
-                    }
-                    console.log("Novo usuário criado e promovido a USER:", user.email);
+                    console.log("Novo usuário criado e promovido para USER:", user.email);
+                    await ensureUserProjectAssociation(user.id);
                 }
             } catch (error) {
                 console.error("Erro ao configurar novo usuário:", error);

@@ -13,9 +13,12 @@ function SignOutContent() {
     useEffect(() => {
         const performSignOut = async () => {
             if (isStarted.current) return;
-            isStarted.current = true;
-            
-            console.log("AUTH SIGNOUT: Starting process...");
+            // Timer de segurança: se o signOut travar (ex: erro de rede ou sessão), 
+            // força o redirecionamento manual após 3 segundos.
+            const timer = setTimeout(() => {
+                console.log("AUTH SIGNOUT: Fallback triggered");
+                window.location.href = finalCallbackUrl;
+            }, 3000);
 
             try {
                 // Realiza apenas o logout no domínio central
@@ -27,12 +30,15 @@ function SignOutContent() {
                     destUrl = u.toString();
                 } catch { }
 
+                console.log("AUTH SIGNOUT: Calling signOut with dest:", destUrl);
+                
                 await signOut({
                     callbackUrl: destUrl,
                     redirect: true
                 });
             } catch (err) {
                 console.warn("Global signOut encountered a minor error, forcing manual redirect:", err);
+                clearTimeout(timer);
                 window.location.href = finalCallbackUrl;
             }
         };

@@ -413,7 +413,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
                 path: "/",
                 secure: process.env.NODE_ENV === "production",
-                domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN || undefined,
+                domain: process.env.NODE_ENV === "production" ? (process.env.NEXT_PUBLIC_COOKIE_DOMAIN || undefined) : undefined,
             },
         },
     },

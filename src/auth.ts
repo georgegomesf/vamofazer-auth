@@ -37,9 +37,17 @@ async function getOriginProjectId() {
  * Ensures the user is associated with the current project
  */
 async function ensureUserProjectAssociation(userId: string) {
+    if (!userId) {
+        console.warn("AUTH: ensureUserProjectAssociation called without userId");
+        return null;
+    }
+    
     try {
         const projectId = await getOriginProjectId();
-        if (!projectId) return null;
+        if (!projectId) {
+            console.warn(`AUTH: No project ID found for association of user ${userId}`);
+            return null;
+        }
 
         let userProject = await prisma.userProject.findUnique({
             where: {
@@ -51,8 +59,23 @@ async function ensureUserProjectAssociation(userId: string) {
         });
 
         if (!userProject) {
-            const project = await prisma.project.findUnique({ where: { id: projectId } });
-            if (project) {
+            // First check if user and project actually exist to provide better error messages
+            const [userExist, project] = await Promise.all([
+                prisma.user.findUnique({ where: { id: userId }, select: { id: true } }),
+                prisma.project.findUnique({ where: { id: projectId } })
+            ]);
+
+            if (!userExist) {
+                console.error(`AUTH: Cannot associate user ${userId} with project ${projectId} - USER DOES NOT EXIST in database.`);
+                return null;
+            }
+
+            if (!project) {
+                console.error(`AUTH: Cannot associate user ${userId} with project ${projectId} - PROJECT DOES NOT EXIST in database.`);
+                return null;
+            }
+
+            try {
                 userProject = await prisma.userProject.create({
                     data: {
                         userId: userId,
@@ -61,11 +84,14 @@ async function ensureUserProjectAssociation(userId: string) {
                     }
                 });
                 console.log(`AUTH: User ${userId} auto-associated with project ${project.name} (${project.id}) with role ${userProject.role}`);
+            } catch (createError) {
+                console.error(`AUTH: Failed to create UserProject association for user ${userId} and project ${projectId}:`, createError);
+                return null;
             }
         }
         return userProject;
     } catch (error) {
-        console.error("AUTH: Error in ensureUserProjectAssociation:", error);
+        console.error(`AUTH: Unexpected error in ensureUserProjectAssociation for user ${userId}:`, error);
         return null;
     }
 }
@@ -81,16 +107,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             clientId: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
             allowDangerousEmailAccountLinking: true,
-
             profile(profile) {
                 return {
-                    id: profile.sub,
                     name: profile.name,
                     email: profile.email,
                     image: profile.picture,
                     emailVerified: getWallClockNow(),
                     role: "USER",
-                };
+                } as any;
             },
         }),
         Email({
